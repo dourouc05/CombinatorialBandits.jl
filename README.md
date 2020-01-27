@@ -21,27 +21,13 @@ Example usage:
 ```julia
 using CombinatorialBandits, Distributions
 
-n = 100
-ε = 1.e-1
-distr = Distribution[Bernoulli(.5 + ((i == j) ? ε : 0.)) for i in 1:n, j in 1:n]
+n = 20
+ε = 0.1
+distr = Distribution[Bernoulli(.5 + ((i % 3 == 0) ? ε : -ε)) for i in 1:n]
 
-i = UncorrelatedPerfectBipartiteMatching(distr, PerfectBipartiteMatchingHungarianSolver())
+i = UncorrelatedPerfectBipartiteMatching(distr, MSetAlgosSolver())
 @time simulate(i, ThompsonSampling(), 200)
 @time simulate(i, LLR(), 200)
 @time simulate(i, CUCB(), 200)
-@time simulate(i, ESCB2(.1, ESCB2Budgeted()), 200)
-```
-
-Only OLS-UCB is fine-tuned for correlated bandits (note it requires an optimisation solver;
-here, Gurobi is used, but [any that is supported by JuMP is acceptable](http://www.juliaopt.org/)):
-
-```julia
-using CombinatorialBandits, Distributions, Gurobi
-
-A = rand(4, 4)
-Σ = (A + A') / 2 + 4 * eye(4)
-distr = MvNormal([-1, 1, 1, -1], Σ)
-
-i = CorrelatedPerfectBipartiteMatching(distr, PerfectBipartiteMatchingLPSolver(GurobiSolver()))
-@time simulate(i, OLSUCB(.1, 1., round.(Σ * 10) / 10, OLSUCBApprox()), 20)
+@time simulate(i, ESCB2(.1, ESCB2Budgeted(.1, true)), 200)
 ```
