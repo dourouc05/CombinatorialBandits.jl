@@ -202,7 +202,7 @@ end
 
 function _budgeted_msets_lp_sub(i::BudgetedMSetInstance, solver)
   model = Model(solver)
-  @variable(model, x[1:length(i.values)], Bin)
+  @variable(model, x[1:length(values(i))], Bin)
   @objective(model, Max, dot(x, values(i)))
   @constraint(model, sum(x) <= m(i))
   @constraint(model, c, dot(x, weights(i)) >= 0)

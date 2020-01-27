@@ -93,7 +93,7 @@ function budgeted_lp_dp(i::BudgetedLongestPathInstance{T}) where T
       S[v, β] = Edge{T}[]
     end
 
-    V[i.src, β] = 0.0
+    V[src(i), β] = 0.0
   end
 
   # Dynamic part.
@@ -101,7 +101,7 @@ function budgeted_lp_dp(i::BudgetedLongestPathInstance{T}) where T
     while true
       changed = false
 
-      for v in vertices(i.graph)
+      for v in vertices(graph(i))
         for w in inneighbors(graph(i), v)
           # Compute the remaining part of the budget still to use.
           remaining_budget = max(0, β - weight(i, w, v))

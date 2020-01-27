@@ -94,13 +94,13 @@ function msets_dp(i::MSetInstance)
 end
 
 function msets_lp(i::MSetInstance; solver=nothing)
-  m = Model(solver)
-  @variable(m, x[1:length(i.values)], Bin)
-  @objective(m, Max, dot(x, i.values))
-  @constraint(m, sum(x) <= i.m)
+  model = Model(solver)
+  @variable(model, x[1:length(values(i))], Bin)
+  @objective(model, Max, dot(x, values(i)))
+  @constraint(model, sum(x) <= m(i))
 
-  set_silent(m)
-  optimize!(m)
+  set_silent(model)
+  optimize!(model)
 
   return MSetSolution(i, findall(JuMP.value.(x) .>= 0.5))
 end

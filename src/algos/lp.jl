@@ -10,12 +10,11 @@ struct ElementaryPathInstance{T}
 end
 
 graph(i::ElementaryPathInstance{T}) where T = i.graph
-costs(i::ElementaryPathInstance{T}) where T = i.costs
 src(i::ElementaryPathInstance{T}) where T = i.src
 dst(i::ElementaryPathInstance{T}) where T = i.dst
 
-dimension(i::ElementaryPathInstance{T}) where T = ne(graph(i))
-cost(i::ElementaryPathInstance{T}, u::T, v::T) where T = costs(i)[Edge(u, v)]
+# dimension(i::ElementaryPathInstance{T}) where T = ne(graph(i))
+cost(i::ElementaryPathInstance{T}, u::T, v::T) where T = i.costs[Edge(u, v)]
 
 struct ElementaryPathSolution{T}
   instance::ElementaryPathInstance{T}
@@ -29,17 +28,17 @@ function lp_dp(i::ElementaryPathInstance{T}) where T # I.e. Bellman-Ford algorit
   S = Dict{T, Vector{Edge{T}}}()
 
   # Initialise.
-  for v in vertices(i.graph)
+  for v in vertices(graph(i))
     V[v] = -Inf
     S[v] = Edge{T}[]
   end
-  V[i.src] = 0.0
+  V[src(i)] = 0.0
 
   # Dynamic part.
-  for _ in 1:ne(i.graph)
+  for _ in 1:ne(graph(i))
     changes = false # Stop the algorithm as soon as it no more makes progress.
 
-    for e in edges(i.graph)
+    for e in edges(graph(i))
       u, v = src(e), dst(e)
       w = cost(i, u, v)
 
@@ -73,5 +72,5 @@ function lp_dp(i::ElementaryPathInstance{T}) where T # I.e. Bellman-Ford algorit
     end
   end
 
-  return ElementaryPathSolution(i, S[i.dst], V, S)
+  return ElementaryPathSolution(i, S[dst(i)], V, S)
 end
