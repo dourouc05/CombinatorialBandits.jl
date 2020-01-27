@@ -138,32 +138,34 @@
     end
   end
 
-  @testset "LP solver" begin
-    @testset "Constructor" for i in [2, 5, 10]
-      n = i
-      ε = 1 / n
-      graph = complete_graph(n)
-      reward = Dict{Tuple{Int, Int}, Distribution}(
-        (src(e), dst(e)) => Bernoulli((src(e) + 1 == dst(e)) ? (1 - ε) : (ε))
-        for e in edges(graph))
-      instance = SpanningTree(graph, reward, SpanningTreeLPSolver(Cbc.Optimizer))
+  if ! is_travis
+    @testset "LP solver" begin
+      @testset "Constructor" for i in [2, 5, 10]
+        n = i
+        ε = 1 / n
+        graph = complete_graph(n)
+        reward = Dict{Tuple{Int, Int}, Distribution}(
+          (src(e), dst(e)) => Bernoulli((src(e) + 1 == dst(e)) ? (1 - ε) : (ε))
+          for e in edges(graph))
+        instance = SpanningTree(graph, reward, SpanningTreeLPSolver(Gurobi.Optimizer))
 
-      @test instance.solver != nothing
-    end
+        @test instance.solver != nothing
+      end
 
-    @testset "Solve with $i nodes" for i in [2, 5, 10]
-      n = i
-      ε = 1 / (n + 1)
-      graph = complete_graph(n)
-      reward = Dict{Tuple{Int, Int}, Distribution}(
-        (src(e), dst(e)) => Bernoulli((src(e) + 1 == dst(e)) ? (1 - ε) : (ε))
-        for e in edges(graph))
-      instance = SpanningTree(graph, reward, SpanningTreeLPSolver(Cbc.Optimizer))
+      @testset "Solve with $i nodes" for i in [2, 5, 10]
+        n = i
+        ε = 1 / (n + 1)
+        graph = complete_graph(n)
+        reward = Dict{Tuple{Int, Int}, Distribution}(
+          (src(e), dst(e)) => Bernoulli((src(e) + 1 == dst(e)) ? (1 - ε) : (ε))
+          for e in edges(graph))
+        instance = SpanningTree(graph, reward, SpanningTreeLPSolver(Gurobi.Optimizer))
 
-      Random.seed!(i)
-      drawn = Dict(k => rand() for (k, _) in reward)
-      solution = solve_linear(instance, drawn)
-      @test is_feasible(instance, solution)
+        Random.seed!(i)
+        drawn = Dict(k => rand() for (k, _) in reward)
+        solution = solve_linear(instance, drawn)
+        @test is_feasible(instance, solution)
+      end
     end
   end
 end

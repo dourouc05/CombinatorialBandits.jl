@@ -1,8 +1,4 @@
-using Test, CPLEX
-
-# To avoid exposing too many symbols from the module.
-include("../../src/algos/st.jl")
-include("../../src/algos/st_budgeted.jl")
+using Test
 
 @testset "Maximum spanning tree" begin
   @testset "Basic" begin

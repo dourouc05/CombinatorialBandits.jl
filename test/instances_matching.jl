@@ -80,26 +80,28 @@
       @test ! is_feasible(instance, [(2, 3), (3, 2), (2, 1), (1, 2)])
     end
 
-    @testset "LP solver" begin
-      @testset "Constructor" for i in [2, 5, 10]
-        n = i
-        reward = Distribution[Bernoulli(((i == j) ? 0.0 : 1.0)) for i in 1:n, j in 1:n]
-        instance = UncorrelatedPerfectBipartiteMatching(reward, PerfectBipartiteMatchingLPSolver(Cbc.Optimizer))
+    if ! is_travis
+      @testset "LP solver" begin
+        @testset "Constructor" for i in [2, 5, 10]
+          n = i
+          reward = Distribution[Bernoulli(((i == j) ? 0.0 : 1.0)) for i in 1:n, j in 1:n]
+          instance = UncorrelatedPerfectBipartiteMatching(reward, PerfectBipartiteMatchingLPSolver(Gurobi.Optimizer))
 
-        @test instance.solver != nothing
-        @test instance.solver.model != nothing
-        @test size(instance.solver.x, 1) == n * n
-      end
+          @test instance.solver != nothing
+          @test instance.solver.model != nothing
+          @test size(instance.solver.x, 1) == n * n
+        end
 
-      @testset "Solve with $i nodes on each side" for i in [2, 5, 10]
-        n = i
-        reward = Distribution[Bernoulli(((i == j) ? 0.0 : 1.0)) for i in 1:n, j in 1:n]
-        instance = UncorrelatedPerfectBipartiteMatching(reward, PerfectBipartiteMatchingLPSolver(Cbc.Optimizer))
+        @testset "Solve with $i nodes on each side" for i in [2, 5, 10]
+          n = i
+          reward = Distribution[Bernoulli(((i == j) ? 0.0 : 1.0)) for i in 1:n, j in 1:n]
+          instance = UncorrelatedPerfectBipartiteMatching(reward, PerfectBipartiteMatchingLPSolver(Gurobi.Optimizer))
 
-        Random.seed!(i)
-        drawn = Dict((i, j) => rand() for i in 1:n, j in 1:n)
-        solution = solve_linear(instance, drawn)
-        @test is_feasible(instance, solution)
+          Random.seed!(i)
+          drawn = Dict((i, j) => rand() for i in 1:n, j in 1:n)
+          solution = solve_linear(instance, drawn)
+          @test is_feasible(instance, solution)
+        end
       end
     end
 
@@ -148,15 +150,17 @@
     @testset "Solver equivalence (size: $i nodes on each side)" for i in [2, 5, 10]
       n = i
       reward = Distribution[Bernoulli(((i == j) ? 0.0 : 1.0)) for i in 1:n, j in 1:n]
-      instance_lp = UncorrelatedPerfectBipartiteMatching(reward, PerfectBipartiteMatchingLPSolver(Cbc.Optimizer))
+      instance_lp = ! is_travis && UncorrelatedPerfectBipartiteMatching(reward, PerfectBipartiteMatchingLPSolver(Gurobi.Optimizer))
       instance_munkres = UncorrelatedPerfectBipartiteMatching(reward, PerfectBipartiteMatchingMunkresSolver())
       instance_hungarian = UncorrelatedPerfectBipartiteMatching(reward, PerfectBipartiteMatchingHungarianSolver())
 
       Random.seed!(i)
       drawn = Dict((i, j) => rand() for i in 1:n, j in 1:n)
 
-      solution_lp = solve_linear(instance_lp, drawn)
-      @test is_feasible(instance_lp, solution_lp)
+      if ! is_travis
+        solution_lp = solve_linear(instance_lp, drawn)
+        @test is_feasible(instance_lp, solution_lp)
+      end
 
       solution_munkres = solve_linear(instance_munkres, drawn)
       @test is_feasible(instance_munkres, solution_munkres)
@@ -165,15 +169,17 @@
       @test is_feasible(instance_hungarian, solution_hungarian)
 
       # All solutions must have the same length, as these are perfect matchings.
-      @test length(solution_lp) == length(solution_munkres)
-      @test length(solution_lp) == length(solution_hungarian)
+      @test length(solution_hungarian) == length(solution_munkres)
 
-      cost_lp = sum(drawn[o] for o in solution_lp)
       cost_munkres = sum(drawn[o] for o in solution_munkres)
       cost_hungarian = sum(drawn[o] for o in solution_hungarian)
 
-      @test cost_lp ≈ cost_munkres
-      @test cost_lp ≈ cost_hungarian
+      @test cost_hungarian ≈ cost_munkres
+      if ! is_travis
+        @test length(solution_lp) == length(solution_hungarian)
+        cost_lp = sum(drawn[o] for o in solution_lp)
+        @test cost_lp ≈ cost_hungarian
+      end
     end
   end
 
@@ -277,30 +283,32 @@
       @test ! is_partially_acceptable(instance, [(2, 3), (3, 2), (2, 1), (1, 2)])
     end
 
-    @testset "LP solver" begin
-      @testset "Constructor" for i in [2, 5, 10]
-        n = i
-        μ = vec(Float64[.5 + ((i == j) ? 1. : 0.) for i in 1:n, j in 1:n])
-        Σ = vec(Float64[((abs(i - j) <= 1) ? sign(i - j) : 0.) for i in 1:n, j in 1:n])
-        reward = MvNormal(μ, Σ)
-        instance = CorrelatedPerfectBipartiteMatching(reward, PerfectBipartiteMatchingLPSolver(Cbc.Optimizer))
+    if ! is_travis
+      @testset "LP solver" begin
+        @testset "Constructor" for i in [2, 5, 10]
+          n = i
+          μ = vec(Float64[.5 + ((i == j) ? 1. : 0.) for i in 1:n, j in 1:n])
+          Σ = vec(Float64[((abs(i - j) <= 1) ? sign(i - j) : 0.) for i in 1:n, j in 1:n])
+          reward = MvNormal(μ, Σ)
+          instance = CorrelatedPerfectBipartiteMatching(reward, PerfectBipartiteMatchingLPSolver(Gurobi.Optimizer))
 
-        @test instance.solver != nothing
-        @test instance.solver.model != nothing
-        @test size(instance.solver.x, 1) == n * n
-      end
+          @test instance.solver != nothing
+          @test instance.solver.model != nothing
+          @test size(instance.solver.x, 1) == n * n
+        end
 
-      @testset "Solve with $i nodes on each side" for i in [2, 5, 10]
-        n = i
-        μ = vec(Float64[.5 + ((i == j) ? 1. : 0.) for i in 1:n, j in 1:n])
-        Σ = vec(Float64[((abs(i - j) <= 1) ? sign(i - j) : 0.) for i in 1:n, j in 1:n])
-        reward = MvNormal(μ, Σ)
-        instance = CorrelatedPerfectBipartiteMatching(reward, PerfectBipartiteMatchingLPSolver(Cbc.Optimizer))
+        @testset "Solve with $i nodes on each side" for i in [2, 5, 10]
+          n = i
+          μ = vec(Float64[.5 + ((i == j) ? 1. : 0.) for i in 1:n, j in 1:n])
+          Σ = vec(Float64[((abs(i - j) <= 1) ? sign(i - j) : 0.) for i in 1:n, j in 1:n])
+          reward = MvNormal(μ, Σ)
+          instance = CorrelatedPerfectBipartiteMatching(reward, PerfectBipartiteMatchingLPSolver(Gurobi.Optimizer))
 
-        Random.seed!(i)
-        drawn = Dict((i, j) => rand() for i in 1:n, j in 1:n)
-        solution = solve_linear(instance, drawn)
-        @test is_feasible(instance, solution)
+          Random.seed!(i)
+          drawn = Dict((i, j) => rand() for i in 1:n, j in 1:n)
+          solution = solve_linear(instance, drawn)
+          @test is_feasible(instance, solution)
+        end
       end
     end
 
@@ -360,15 +368,17 @@
       Σ = vec(Float64[((abs(i - j) <= 1) ? sign(i - j) : 0.) for i in 1:n, j in 1:n])
       reward = MvNormal(μ, Σ)
 
-      instance_lp = CorrelatedPerfectBipartiteMatching(reward, PerfectBipartiteMatchingLPSolver(Cbc.Optimizer))
+      instance_lp = ! is_travis && CorrelatedPerfectBipartiteMatching(reward, PerfectBipartiteMatchingLPSolver(Gurobi.Optimizer))
       instance_munkres = CorrelatedPerfectBipartiteMatching(reward, PerfectBipartiteMatchingMunkresSolver())
       instance_hungarian = CorrelatedPerfectBipartiteMatching(reward, PerfectBipartiteMatchingHungarianSolver())
 
       Random.seed!(i)
       drawn = Dict((i, j) => rand() for i in 1:n, j in 1:n)
 
-      solution_lp = solve_linear(instance_lp, drawn)
-      @test is_feasible(instance_lp, solution_lp)
+      if ! is_travis
+        solution_lp = solve_linear(instance_lp, drawn)
+        @test is_feasible(instance_lp, solution_lp)
+      end
 
       solution_munkres = solve_linear(instance_munkres, drawn)
       @test is_feasible(instance_munkres, solution_munkres)
@@ -377,15 +387,18 @@
       @test is_feasible(instance_hungarian, solution_hungarian)
 
       # All solutions must have the same length, as these are perfect matchings.
-      @test length(solution_lp) == length(solution_munkres)
-      @test length(solution_lp) == length(solution_hungarian)
+      @test length(solution_hungarian) == length(solution_munkres)
 
-      cost_lp = sum(drawn[o] for o in solution_lp)
       cost_munkres = sum(drawn[o] for o in solution_munkres)
       cost_hungarian = sum(drawn[o] for o in solution_hungarian)
 
-      @test cost_lp ≈ cost_munkres
-      @test cost_lp ≈ cost_hungarian
+      @test cost_hungarian ≈ cost_munkres
+
+      if ! is_travis
+        @test length(solution_lp) == length(solution_hungarian)
+        cost_lp = sum(drawn[o] for o in solution_lp)
+        @test cost_lp ≈ cost_hungarian
+      end
     end
   end
 end

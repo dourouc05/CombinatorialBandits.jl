@@ -1,5 +1,3 @@
-using CPLEX
-
 # ESCB-2, "efficient sampling for combinatorial bandits".
 # Based on https://arxiv.org/abs/1502.03475.
 

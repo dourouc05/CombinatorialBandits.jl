@@ -4,9 +4,20 @@ using Test
 using LightGraphs
 using Random
 using Distributions
-using JuMP
-# using Cbc # , SCS, Pajarito
-using CPLEX, Gurobi; const Cbc = CPLEX # Gurobi for lazy constraints (does not seem to work with CPLEX)
+
+is_travis = "TRAVIS_JULIA_VERSION" in keys(ENV) || true
+# TODO: need for optional dependencies for this to work, I suppose.
+# https://github.com/JuliaLang/Pkg.jl/issues/1285
+if ! is_travis
+  using JuMP
+  # Why Gurobi?
+  # - Need support for lazy constraints (elementary paths):
+  #   - Gurobi.jl does not seem to work with lazy constraints
+  #   - Mosek does not support them
+  # - Need support for MISOCP
+  #   - Pajarito is not yet ported to MOI
+  using Gurobi
+end
 
 function test_policy_trace(instance::CombinatorialInstance{T}, policy::Policy,
                            n_rounds::Int, total_arm_count::Int,

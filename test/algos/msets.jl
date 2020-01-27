@@ -1,27 +1,26 @@
-using Test, CPLEX
-
-# To avoid exposing too many symbols from the module.
-include("../../src/algos/msets.jl")
-include("../../src/algos/msets_budgeted.jl")
+using Test
 
 @testset "m-sets" begin
   m = 2
   i = MSetInstance(Float64[5, 4, 3], m)
   g = msets_greedy(i)
   d = msets_dp(i)
-  l = msets_lp(i, solver=CPLEX.Optimizer)
+  l = ! is_travis && msets_lp(i, solver=Gurobi.Optimizer)
 
   @test i.m == m
 
   @test value(g) == value(d)
-  @test value(g) == value(l)
   @test length(g.items) <= m
   @test length(d.items) <= m
-  @test length(l.items) <= m
 
   @test g.instance == i
   @test d.instance == i
-  @test l.instance == i
+
+  if ! is_travis
+    @test value(g) == value(l)
+    @test length(l.items) <= m
+    @test l.instance == i
+  end
 end
 
 @testset "Budgeted m-sets" begin
@@ -41,7 +40,7 @@ end
     m = 2
     i = BudgetedMSetInstance(Float64[5, 4, 3], Int[1, 1, 1], m)
     d = budgeted_msets_dp(i)
-    l = budgeted_msets_lp_all(i, solver=CPLEX.Optimizer)
+    l = ! is_travis && budgeted_msets_lp_all(i, solver=Gurobi.Optimizer)
 
     @test i.m == m
     @test d.instance == i
@@ -56,24 +55,21 @@ end
     @test d.solutions[m, 0, 2] == [1, 2]
     @test d.solutions[m, 0, 3] == [-1]
 
-    @test l.state[m, 0 + 1, 0 + 1] == 9.0
-    @test l.state[m, 0 + 1, 1 + 1] == 9.0
-    @test l.state[m, 0 + 1, 2 + 1] == 9.0
-    @test l.state[m, 0 + 1, 3 + 1] == -Inf
-
-    @test l.solutions[m, 0, 0] == [1, 2]
-    @test l.solutions[m, 0, 1] == [1, 2]
-    @test l.solutions[m, 0, 2] == [1, 2]
-    @test l.solutions[m, 0, 3] == [-1]
+    if ! is_travis
+      for i in 0:3
+        @test l.state[m, 0 + 1, i + 1] ≈ d.state[m, 0 + 1, i + 1]
+        @test l.solutions[m, 0, i] == d.solutions[m, 0, i]
+      end
+    end
 
     # Accessors.
     expected_items = Dict{Int, Vector{Int}}(0 => [1, 2], 1 => [1, 2], 2 => [1, 2], 3 => [-1])
     test_items_at(d, expected_items)
-    test_items_at(l, expected_items)
+    ! is_travis && test_items_at(l, expected_items)
 
     expected = Dict{Int, Float64}(0 => 9.0, 1 => 9.0, 2 => 9.0, 3 => -Inf)
     test_solution_at(d, expected)
-    test_solution_at(l, expected)
+    ! is_travis && test_solution_at(l, expected)
   end
 
   @testset "Conformity" begin
@@ -89,10 +85,10 @@ end
     i = BudgetedMSetInstance(v, w, m)
     d = budgeted_msets_dp(i)
     # TODO: stop the algorithm in this case? Don't waste too much time on this part of the table.
-    l = budgeted_msets_lp_select(i, [0, 96, 97, 320], solver=CPLEX.Optimizer)
+    l = ! is_travis && budgeted_msets_lp_select(i, [0, 96, 97, 320], solver=Gurobi.Optimizer)
     expected = Dict{Int, Float64}(0 => 3 * b, 96 => 3 * b, 96 + 1 => -Inf, 320 => -Inf) # No more solutions after 96.
     test_solution_at(d, expected)
-    test_solution_at(l, expected)
+    ! is_travis && test_solution_at(l, expected)
 
     # 2
     v = [7.840854066284411, 3.9204270331422055, 7.840854066284411, 3.9204270331422055, 7.840854066284411, 7.840854066284411, 7.840854066284411, 7.840854066284411, 15.681708132568822, 5.227236044189607]
@@ -101,7 +97,7 @@ end
 
     i = BudgetedMSetInstance(v, w, m)
     d = budgeted_msets_dp(i)
-    l = budgeted_msets_lp_select(i, [0, 4, 20, 24, 25, 32, 33, 40, 41, 48, 49, 72, 73, 96, 97, 280, 319, 320], solver=CPLEX.Optimizer)
+    l = ! is_travis && budgeted_msets_lp_select(i, [0, 4, 20, 24, 25, 32, 33, 40, 41, 48, 49, 72, 73, 96, 97, 280, 319, 320], solver=Gurobi.Optimizer)
 
     a = 31.363416265137644
     b = 28.74979824304284
@@ -113,6 +109,6 @@ end
       96 => -Inf, 97 => -Inf, 280 => -Inf, 319 => -Inf, 320 => -Inf
     )
     test_solution_at(d, expected)
-    test_solution_at(l, expected)
+    ! is_travis && test_solution_at(l, expected)
   end
 end

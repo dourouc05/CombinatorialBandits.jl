@@ -1,9 +1,5 @@
 using Test
 
-# To avoid exposing too many symbols from the module.
-include("../../src/algos/lp.jl")
-include("../../src/algos/lp_budgeted.jl")
-
 @testset "Longest paths" begin
   # Create a directed path graph.
   g = path_digraph(3)
@@ -19,7 +15,7 @@ include("../../src/algos/lp_budgeted.jl")
   i = ElementaryPathInstance(g, costs, 1, 3)
   d = lp_dp(i)
 
-  @test d.instance == iw
+  @test d.instance == i
   @test d.path == [Edge(1, 3)]
 
   # Positive-cost cycle.

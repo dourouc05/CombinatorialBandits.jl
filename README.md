@@ -33,15 +33,15 @@ i = UncorrelatedPerfectBipartiteMatching(distr, PerfectBipartiteMatchingHungaria
 ```
 
 Only OLS-UCB is fine-tuned for correlated bandits (note it requires an optimisation solver;
-here, CPLEX is used, but [any that is supported by JuMP is acceptable](http://www.juliaopt.org/)):
+here, Gurobi is used, but [any that is supported by JuMP is acceptable](http://www.juliaopt.org/)):
 
 ```julia
-using CombinatorialBandits, Distributions, CPLEX
+using CombinatorialBandits, Distributions, Gurobi
 
 A = rand(4, 4)
 Σ = (A + A') / 2 + 4 * eye(4)
 distr = MvNormal([-1, 1, 1, -1], Σ)
 
-i = CorrelatedPerfectBipartiteMatching(distr, PerfectBipartiteMatchingLPSolver(CplexSolver(CPX_PARAM_SCRIND=0)))
+i = CorrelatedPerfectBipartiteMatching(distr, PerfectBipartiteMatchingLPSolver(GurobiSolver()))
 @time simulate(i, OLSUCB(.1, 1., round.(Σ * 10) / 10, OLSUCBApprox()), 20)
 ```

@@ -3,9 +3,8 @@
     n = 3
     ε = .1
     reward = Distribution[Bernoulli(.5 + ((i == j) ? ε : 0.)) for i in 1:n, j in 1:n]
-    instance = UncorrelatedPerfectBipartiteMatching(reward, PerfectBipartiteMatchingLPSolver(Cbc.Optimizer))
+    instance = UncorrelatedPerfectBipartiteMatching(reward, PerfectBipartiteMatchingMunkresSolver())
 
-    # TODO: Cbc seems to output garbage for n_rounds - 1 iterations (probably because it does not support hot starts).
     Random.seed!(1)
     n_rounds = 20
     s = simulate(instance, ThompsonSampling(), n_rounds)
@@ -24,7 +23,7 @@
     n = 3
     ε = .1
     reward = Distribution[Bernoulli(.5 + ((i == j) ? ε : 0.)) for i in 1:n, j in 1:n]
-    instance = UncorrelatedPerfectBipartiteMatching(reward, PerfectBipartiteMatchingLPSolver(Cbc.Optimizer))
+    instance = UncorrelatedPerfectBipartiteMatching(reward, PerfectBipartiteMatchingMunkresSolver())
 
     n_rounds = 20
     test_policy_trace(instance, ThompsonSampling(), n_rounds, n_rounds * n, 3.2, 39.0, 42.2)
