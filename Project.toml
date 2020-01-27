@@ -16,7 +16,7 @@ Munkres = "4cefb923-2b6f-58c4-9e65-6821f26b7b51"
 [compat]
 julia = "^1"
 DataStructures = "^0.9"
-Distributions = "^0.8"
+Distributions = "^0.16"
 Hungarian = "^0.3"
 IterTools = "^1.0"
 JuMP = "^0.20"
