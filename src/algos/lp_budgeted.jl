@@ -98,6 +98,7 @@ function budgeted_lp_dp(i::BudgetedLongestPathInstance{T}) where T
 
   # Dynamic part.
   for β in 1:budget(i)
+    # Loop needed when at least a weight is equal to zero. TODO: remove it when all weights are nonzero? 
     while true
       changed = false
 

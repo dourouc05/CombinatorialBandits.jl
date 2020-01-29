@@ -26,10 +26,9 @@ module CombinatorialBandits
          MSetInstance, MSetSolution, dimension, m, value, values, msets_greedy, msets_dp, msets_lp,
          BudgetedMSetInstance, BudgetedMSetSolution, weight, weights, budget, max_weight, items, items_all_budgets, budgeted_msets_dp, budgeted_msets_lp, budgeted_msets_lp_select, budgeted_msets_lp_all,
          ElementaryPathInstance, ElementaryPathSolution, graph, costs, src, dst, cost, lp_dp,
-         BudgetedLongestPathInstance, BudgetedLongestPathSolution, rewards, reward, budgeted_lp_dp, 
+         BudgetedLongestPathInstance, BudgetedLongestPathSolution, rewards, reward, budgeted_lp_dp,
          SpanningTreeInstance, SpanningTreeSolution, st_prim,
-         BudgetedSpanningTreeInstance, BudgetedSpanningTreeSolution, BudgetedSpanningTreeLagrangianSolution, SimpleBudgetedSpanningTreeSolution, _budgeted_spanning_tree_compute_value, _budgeted_spanning_tree_compute_weight, st_prim_budgeted_lagrangian, st_prim_budgeted_lagrangian_search, _solution_symmetric_difference, _solution_symmetric_difference_size, st_prim_budgeted_lagrangian_refinement
-
+         BudgetedSpanningTreeInstance, BudgetedSpanningTreeSolution, BudgetedSpanningTreeLagrangianSolution, SimpleBudgetedSpanningTreeSolution, _budgeted_spanning_tree_compute_value, _budgeted_spanning_tree_compute_weight, st_prim_budgeted_lagrangian, st_prim_budgeted_lagrangian_search, _solution_symmetric_difference, _solution_symmetric_difference_size, st_prim_budgeted_lagrangian_refinement, st_prim_budgeted_lagrangian_approx_half
 
   # General algorithm.
   abstract type Policy end
