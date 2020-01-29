@@ -113,6 +113,13 @@ end
 function st_prim_budgeted_lagrangian_refinement(i::BudgetedSpanningTreeInstance{T};
                                                 ε::Float64=1.0e-3, ζ⁻::Float64=0.2, ζ⁺::Float64=5.0,
                                                 stalling⁻::Float64=1.0e-5) where T
+  # Approximately solve the following problem:
+  #     \max_{x spanning tree} rewards x  s.t.  weights x >= budget
+  # This algorithm provides an additive approximation to this problem. If x* is the optimum solution and x~ the one
+  # returned by this algorithm,
+  #     weights x* >= budget   and   weights x~ >= budget                 (the returned solution is feasible)
+  #     rewards x~ >= rewards x* - \max{e edge} reward[e]                 (additive approximation)
+
   # Check assumptions.
   if ζ⁻ >= 1.0
     error("ζ⁻ must be strictly less than 1.0: the dual multiplier λ is multiplied by ζ⁻ to reach an infeasible solution by less penalising the budget constraint.")
