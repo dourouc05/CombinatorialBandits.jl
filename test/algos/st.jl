@@ -55,8 +55,18 @@ end
     @test res_a == [Edge(1, 2)] # Elements that are in a but not in b
     @test res_b == [Edge(1, 4)] # Elements that are in b but not in a
 
-    # Complete approximation algorithm.
+    # Additive approximation algorithm.
     sol = st_prim_budgeted_lagrangian_refinement(i)
+    @assert sol != nothing
+    @test sol.instance == i
+    s = sol.tree
+    @test length(s) == 2
+    @test Edge(1, 3) in s # Only important edge in this instance: the only one to have a non-zero weight.
+    @test _budgeted_spanning_tree_compute_weight(i, s) >= budget
+
+    # Multiplicative approximation algorithm.
+    sol = st_prim_budgeted_lagrangian_approx_half(i)
+    @assert sol != nothing
     @test sol.instance == i
     s = sol.tree
     @test length(s) == 2
@@ -73,10 +83,20 @@ end
     w = Dict(Edge(1, 2) => 5)
     i = BudgetedSpanningTreeInstance(graph, r, w, 0)
     s = st_prim_budgeted_lagrangian_refinement(i)
+    @assert s != nothing
+    @assert s.tree == [Edge(1, 2)]
+
+    s = st_prim_budgeted_lagrangian_approx_half(i)
+    @assert s != nothing
     @assert s.tree == [Edge(1, 2)]
 
     i = BudgetedSpanningTreeInstance(graph, r, w, 20)
     s = st_prim_budgeted_lagrangian_refinement(i)
+    @assert s != nothing
+    @assert s.tree == Edge{Int}[]
+
+    s = st_prim_budgeted_lagrangian_approx_half(i)
+    @assert s != nothing
     @assert s.tree == Edge{Int}[]
   end
 end

@@ -1,5 +1,3 @@
-using LightGraphs
-
 struct BudgetedSpanningTreeInstance{T, U}
   graph::AbstractGraph{T}
   rewards::Dict{Edge{T}, Float64}
@@ -7,9 +5,18 @@ struct BudgetedSpanningTreeInstance{T, U}
   budget::U
 end
 
+function _budgeted_spanning_tree_compute_value(i::Union{SpanningTreeInstance{T}, BudgetedSpanningTreeInstance{T}}, solution::Vector{Edge{T}}) where T
+  return sum(i.rewards[(e in keys(i.rewards)) ? e : reverse(e)] for e in solution)
+end
+
+function _budgeted_spanning_tree_compute_weight(i::BudgetedSpanningTreeInstance{T}, solution::Vector{Edge{T}}) where T
+  return sum(i.weights[(e in keys(i.weights)) ? e : reverse(e)] for e in solution)
+end
+
 abstract type BudgetedSpanningTreeSolution{T, U}
   # instance::BudgetedSpanningTreeInstance{T, U}
   # tree::Vector{Edge{T}}
+  # value::Float64
 end
 
 struct BudgetedSpanningTreeLagrangianSolution{T, U} <: BudgetedSpanningTreeSolution{T, U}
@@ -24,14 +31,20 @@ end
 struct SimpleBudgetedSpanningTreeSolution{T, U} <: BudgetedSpanningTreeSolution{T, U}
   instance::BudgetedSpanningTreeInstance{T, U}
   tree::Vector{Edge{T}}
-end
+  value::Float64
 
-function _budgeted_spanning_tree_compute_value(i::Union{SpanningTreeInstance{T}, BudgetedSpanningTreeInstance{T}}, solution::Vector{Edge{T}}) where T
-  return sum(i.rewards[(e in keys(i.rewards)) ? e : reverse(e)] for e in solution)
-end
+  function SimpleBudgetedSpanningTreeSolution(instance::BudgetedSpanningTreeInstance{T, U}, tree::Vector{Edge{T}}) where {T, U}
+    if length(tree) > 0
+      return new{T, U}(instance, tree, _budgeted_spanning_tree_compute_value(instance, tree))
+    else
+      return new{T, U}(instance, tree, -Inf)
+    end
+  end
 
-function _budgeted_spanning_tree_compute_weight(i::BudgetedSpanningTreeInstance{T}, solution::Vector{Edge{T}}) where T
-  return sum(i.weights[(e in keys(i.weights)) ? e : reverse(e)] for e in solution)
+  function SimpleBudgetedSpanningTreeSolution(instance::BudgetedSpanningTreeInstance{T, U}) where {T, U}
+    # No feasible solution.
+    return new{T, U}(instance, edgetype(instance.graph)[], -Inf)
+  end
 end
 
 function st_prim_budgeted_lagrangian(i::BudgetedSpanningTreeInstance{T}, λ::Float64) where T
@@ -134,7 +147,7 @@ function st_prim_budgeted_lagrangian_refinement(i::BudgetedSpanningTreeInstance{
   feasible_solution = st_prim(feasible_instance)
   if _budgeted_spanning_tree_compute_value(feasible_instance, feasible_solution.tree) < i.budget
     # By maximising the left-hand side of the budget constraint, impossible to reach the target budget. No solution!
-    return SimpleBudgetedSpanningTreeSolution(i, similar(feasible_solution.tree, 0))
+    return SimpleBudgetedSpanningTreeSolution(i)
   end
 
   # Solve the Lagrangian relaxation to optimality.
@@ -143,11 +156,16 @@ function st_prim_budgeted_lagrangian_refinement(i::BudgetedSpanningTreeInstance{
   λmax = lagrangian.λmax
   b0 = _budgeted_spanning_tree_compute_weight(i, st0) # Budget consumption of this first solution.
 
+  # If already respecting the budget constraint exactly, done!
+  if b0 == i.budget
+    return SimpleBudgetedSpanningTreeSolution(i, x⁺)
+  end
+
   # Find two solutions: one above the budget x⁺ (i.e. respecting the constraint), the other not x⁻.
   x⁺, x⁻ = nothing, nothing
 
   λi = λ0
-  if b0 >= i.budget
+  if b0 > i.budget
     x⁺ = st0
     @assert _budgeted_spanning_tree_compute_weight(i, x⁺) >= i.budget
 
@@ -248,4 +266,68 @@ function st_prim_budgeted_lagrangian_refinement(i::BudgetedSpanningTreeInstance{
 
   # Done!
   return SimpleBudgetedSpanningTreeSolution(i, x⁺)
+end
+
+function st_prim_budgeted_lagrangian_approx_half(i::BudgetedSpanningTreeInstance{T}; kwargs...) where T
+  # Approximately solve the following problem:
+  #     \max_{x spanning tree} rewards x  s.t.  weights x >= budget
+  # This algorithm provides a multiplicative approximation to this problem. If x* is the optimum solution and x~ the one
+  # returned by this algorithm,
+  #     weights x* >= budget   and   weights x~ >= budget                 (the returned solution is feasible)
+  #     rewards x~ >= rewards x* / 2                                      (multiplicative approximation)
+
+  # Based on the same ideas as https://doi.org/10.1007/s10107-009-0307-4
+
+  # For each pair of edges, force these two edges to be part of the solution and discard all edges with a higher value.
+  best_sol = nothing
+  for e1 in edges(i.graph)
+    for e2 in edges(i.graph)
+      # (e1, e2) must be a pair of distinct edges.
+      if (src(e1) == src(e2) && dst(e1) == dst(e2)) || (src(e1) == dst(e2) && src(e1) == dst(e2))
+        continue
+      end
+
+      # Filter out the edges that have a higher value than any of these two edges. Give a very large reward to them both.
+      cutoff = min(i.rewards[e1], i.rewards[e2])
+      rewards = filter(kv -> kv[2] < cutoff, i.rewards)
+      rewards[e1] = prevfloat(Inf)
+      rewards[e2] = prevfloat(Inf)
+
+      graph = SimpleGraph(nv(i.graph))
+      for e in keys(rewards)
+        add_edge!(graph, e)
+      end
+
+      weights = Dict(e => i.weights[e] for e in keys(rewards))
+
+      # No other simplification can be made, unfortunately: all other edges might participate in the optimum solution.
+      # (Only exception: e1 and e2 are incident to the same vertex; any edge linking the other extremities of these edges
+      # can be removed, but that's only one edge at most.)
+      # As e1 and e2 have the best reward (as they are really bumped), they must be in any optimum solution.
+      bsti = BudgetedSpanningTreeInstance(graph, rewards, weights, i.budget)
+      sol = st_prim_budgeted_lagrangian_refinement(bsti; kwargs...)
+
+      # This subproblem is infeasible. Maybe it's because the overall problem is infeasible or just because too many
+      # edges were removed.
+      if length(sol.tree) == 0
+        continue
+      end
+
+      # Impossible to have a feasible solution with these two edges, probably because of the budget constraint.
+      if ! (e1 in sol.tree) || ! (e2 in sol.tree)
+        continue
+      end
+
+      # Only keep the best solution.
+      if best_sol == nothing || sol.value > best_sol.value
+        best_sol = sol
+      end
+    end
+  end
+
+  if best_sol == nothing
+    return best_sol
+  else
+    return SimpleBudgetedSpanningTreeSolution(i)
+  end
 end
