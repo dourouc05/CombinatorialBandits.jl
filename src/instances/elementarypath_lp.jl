@@ -19,6 +19,15 @@ function _elementary_path_lazy_callback(solver::ElementaryPathLPSolver, cb_data)
   # I.e. at most one edge incoming and at most one outgoing (except for source/destination).
   x = Dict(e => callback_value(cb_data, solver.x[e]) for e in edges(solver.graph))
 
+  # This callback is sometimes called for noninteger nodes! Just let the solver go on for these nodes.
+  for e in edges(solver.graph)
+    # Test for a ε = 0.01 tolerance, which is quite forgiving.
+    if x[e] >= 0.01 && x[e] <= 0.99
+      # The value for x[e] is clearly not integer.
+      return
+    end
+  end
+
   # Helper methods.
   inedges(g, v) = (edgetype(g)(x, v) for x in inneighbors(g, v))
   outedges(g, v) = (edgetype(g)(v, x) for x in outneighbors(g, v))
