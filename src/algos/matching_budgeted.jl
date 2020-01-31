@@ -225,15 +225,36 @@ function matching_hungarian_budgeted_lagrangian_refinement(i::BudgetedBipartiteM
     @assert _budgeted_bipartite_matching_compute_weight(i, x⁺) >= i.budget # Feasible.
     @assert _budgeted_bipartite_matching_compute_weight(i, x⁻) < i.budget # Infeasible.
 
-    # Switch elements from one solution to another.
+    # Switch elements from one solution to another: use the XOR between the two solutions as an augmenting path/cycle.
     only_in_x⁺, only_in_x⁻ = _solution_symmetric_difference(x⁺, x⁻)
-    e1 = first(only_in_x⁺)
-    e2 = first(only_in_x⁻)
+    xor = vcat(only_in_x⁺, only_in_x⁻)
 
-    # Create the new solution (don't erase x⁺ nor x⁻: only one of the two will be forgotten, the other will be kept).
+    current_edge = first(xor)
+    current_vertex = src(current_edge)
+    all_vertices = Set{T}(current_vertex)
+    xor = xor[2:end]
+
     new_x = copy(x⁺)
-    filter!(e -> e != e1, new_x)
-    push!(new_x, e2)
+    while length(xor) > 0 # If the XOR is a path: consume all edges; otherwise, once a node is met twice, break.
+      # If the current edge is in the solution, remove it. Otherwise, add it.
+      if current_edge in new_x
+        filter!(e -> e != current_edge, new_x)
+      else
+        push!(new_x, current_edge)
+      end
+
+      # Go to the next edge, following a cycle or a path.
+      current_vertex = dst(current_edge)
+      current_edge_idx = findfirst(e -> src(e) == current_vertex, xor)
+      current_edge = xor[current_edge]
+      xor = vcat(xor[1:(current_edge_idx - 1)], xor[(current_edge + 1):end])
+
+      # Check for a cycle.
+      if current_vertex in all_vertices
+        break
+      end
+      push!(all_vertices, current_vertex)
+    end
 
     # Replace one of the two solutions, depending on whether this solution is feasible (x⁺) or not (x⁻).
     if _budgeted_bipartite_matching_compute_weight(i, new_x) >= i.budget
