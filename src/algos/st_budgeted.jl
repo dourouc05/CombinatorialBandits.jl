@@ -5,12 +5,12 @@ struct BudgetedSpanningTreeInstance{T, U}
   budget::U
 end
 
-function _budgeted_spanning_tree_compute_value(i::Union{SpanningTreeInstance{T}, BudgetedSpanningTreeInstance{T}}, solution::Vector{Edge{T}}) where T
-  return sum(i.rewards[(e in keys(i.rewards)) ? e : reverse(e)] for e in solution)
+function _budgeted_spanning_tree_compute_value(i::Union{SpanningTreeInstance{T}, BudgetedSpanningTreeInstance{T, U}}, tree::Vector{Edge{T}}) where {T, U}
+  return sum(i.rewards[(e in keys(i.rewards)) ? e : reverse(e)] for e in tree)
 end
 
-function _budgeted_spanning_tree_compute_weight(i::BudgetedSpanningTreeInstance{T}, solution::Vector{Edge{T}}) where T
-  return sum(i.weights[(e in keys(i.weights)) ? e : reverse(e)] for e in solution)
+function _budgeted_spanning_tree_compute_weight(i::BudgetedSpanningTreeInstance{T, U}, tree::Vector{Edge{T}}) where {T, U}
+  return sum(i.weights[(e in keys(i.weights)) ? e : reverse(e)] for e in tree)
 end
 
 abstract type BudgetedSpanningTreeSolution{T, U}
@@ -47,17 +47,16 @@ struct SimpleBudgetedSpanningTreeSolution{T, U} <: BudgetedSpanningTreeSolution{
   end
 end
 
-function st_prim_budgeted_lagrangian(i::BudgetedSpanningTreeInstance{T}, λ::Float64) where T
-  # Solve the subproblem
+function st_prim_budgeted_lagrangian(i::BudgetedSpanningTreeInstance{T, U}, λ::Float64) where {T, U}
+  # Solve the subproblem for one value of the dual multiplier λ:
   #     l(λ) = \max_{x spanning tree} (rewards + λ weights) x - λ budget.
   sti_rewards = Dict{Edge{T}, Float64}(e => i.rewards[e] + λ * i.weights[e] for e in keys(i.rewards))
   sti = SpanningTreeInstance(i.graph, sti_rewards)
   sti_sol = st_prim(sti)
-  sti_value = sum(sti_rewards[(e in keys(i.rewards)) ? e : reverse(e)] for e in sti_sol.tree)
-  return sti_value - λ * i.budget, sti_sol.tree
+  return _budgeted_spanning_tree_compute_value(i, sti_sol.tree) - λ * i.budget, sti_sol.tree
 end
 
-function st_prim_budgeted_lagrangian_search(i::BudgetedSpanningTreeInstance{T}, ε::Float64) where T
+function st_prim_budgeted_lagrangian_search(i::BudgetedSpanningTreeInstance{T, U}, ε::Float64) where {T, U}
   # Approximately solve the problem \min_{l ≥ 0} l(λ), where
   #     l(λ) = \max_{x spanning tree} (rewards + λ weights) x - λ budget.
   # This problem is the Lagrangian dual of the budgeted maximum spanning-tree problem:

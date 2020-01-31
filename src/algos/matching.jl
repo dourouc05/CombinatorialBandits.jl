@@ -11,6 +11,8 @@ struct BipartiteMatchingInstance{T}
   vertex_to_id_right::Vector{Edge{T}, Int}
 
   function BipartiteMatchingInstance(graph::AbstractGraph{T}, rewards::Dict{Edge{T}, Float64}) where T
+    # Implicit assumption: all edges in the rewards exist in the graph; all edges in the graph have a reward.
+
     map = bipartite_map(graph)
     if length(map) != nv(g) # Condition from is_bipartite
       error("The input graph is not bipartite!")
@@ -27,7 +29,12 @@ struct BipartiteMatchingInstance{T}
     @assert length(vertices_right) == n_right
     @assert n_left + n_right == nv(graph)
 
-    return new(graph, map, rewards, n_left, n_right, id_to_vertex_left, id_to_vertex_right, vertex_to_id_left, vertex_to_id_right)
+    return new{T}(graph, map, rewards, n_left, n_right, id_to_vertex_left, id_to_vertex_right, vertex_to_id_left, vertex_to_id_right)
+  end
+
+  function BipartiteMatchingInstance(i::BipartiteMatchingInstance{T}, rewards::Dict{Edge{T}, Float64}) where T
+    # Only for private use. Change the rewards of a given instance.
+    return new{T}(i.graph, i.map, rewards, i.n_left, i.n_right, i.id_to_vertex_left, i.id_to_vertex_right, i.vertex_to_id_left, i.vertex_to_id_right)
   end
 end
 
