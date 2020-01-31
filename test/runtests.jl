@@ -90,6 +90,7 @@ solve_linear(::SpanningTreeNoSolver, ::Dict{Tuple{Int64, Int64}, Float64}) = Tup
 
   @testset "Combinatorial algorithms" begin
     include("algos/ep.jl")
+    include("algos/matching.jl")
     include("algos/msets.jl")
     include("algos/st.jl")
   end
