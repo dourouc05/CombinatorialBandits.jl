@@ -1,6 +1,6 @@
 # Release notes
 
-## 0.0.1
+## 0.1.0
 
 First release. Several combinatorial bandits algorithms are included:
 
@@ -29,3 +29,12 @@ Several polynomial-time algorithms are implemented for ESCB-2:
   formulation of the problem: for now, all four basic instances)
 * exact algorithm based on budgeted versions of the linear problems
   (provided for: m-sets, elementary paths, spanning trees)
+
+## 0.1.1
+
+Update requirements for DataStructures to allow more versions.
+
+Implement a refined approximation algorithm for budgeted maximum spanning trees.
+It now provides a traditional approximation factor (1/2) instead of an
+approximation term. See comments around `st_prim_budgeted_lagrangian_approx_half`
+for more details.
