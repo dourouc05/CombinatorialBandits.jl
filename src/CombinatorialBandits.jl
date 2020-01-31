@@ -213,6 +213,7 @@ module CombinatorialBandits
   end
 
   ## Combinatorial algorithms. TODO: put this in another package.
+  include("algos/helpers.jl")
   include("algos/lp.jl")
   include("algos/lp_budgeted.jl")
   include("algos/matching.jl")

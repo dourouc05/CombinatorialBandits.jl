@@ -96,35 +96,9 @@ function st_prim_budgeted_lagrangian_search(i::BudgetedSpanningTreeInstance{T, U
   end
 end
 
-function _solution_symmetric_difference(a::Vector{Edge{T}}, b::Vector{Edge{T}}) where T
-  only_in_a = Edge{T}[]
-  only_in_b = Edge{T}[]
-
-  for e in a
-    if e in b
-      continue
-    end
-    push!(only_in_a, e)
-  end
-
-  for e in b
-    if e in a
-      continue
-    end
-    push!(only_in_b, e)
-  end
-
-  return only_in_a, only_in_b
-end
-
-function _solution_symmetric_difference_size(a::Vector{Edge{T}}, b::Vector{Edge{T}}) where T
-  only_in_a, only_in_b = _solution_symmetric_difference(a, b)
-  return length(only_in_a) + length(only_in_b)
-end
-
-function st_prim_budgeted_lagrangian_refinement(i::BudgetedSpanningTreeInstance{T};
+function st_prim_budgeted_lagrangian_refinement(i::BudgetedSpanningTreeInstance{T, U};
                                                 ε::Float64=1.0e-3, ζ⁻::Float64=0.2, ζ⁺::Float64=5.0,
-                                                stalling⁻::Float64=1.0e-5) where T
+                                                stalling⁻::Float64=1.0e-5) where {T, U}
   # Approximately solve the following problem:
   #     \max_{x spanning tree} rewards x  s.t.  weights x >= budget
   # This algorithm provides an additive approximation to this problem. If x* is the optimum solution and x~ the one
@@ -166,7 +140,7 @@ function st_prim_budgeted_lagrangian_refinement(i::BudgetedSpanningTreeInstance{
   λi = λ0
   if b0 > i.budget
     x⁺ = st0
-    @assert _budgeted_spanning_tree_compute_weight(i, x⁺) >= i.budget
+    @assert _budgeted_spanning_tree_compute_weight(i, x⁺) > i.budget
 
     stalling = false
     while true
@@ -197,7 +171,7 @@ function st_prim_budgeted_lagrangian_refinement(i::BudgetedSpanningTreeInstance{
 
     if stalling # Second test: minimise the left-hand side of the budget constraint, in hope of finding a feasible solution.
       # This process is highly similar to the computation of feasible_solution, but with a reverse objective function.
-      infeasible_rewards = Dict{Edge{T}, Float64}(e => - i.weights[e] for e in keys(i.rewards))
+      infeasible_rewards = Dict{Edge{T}, Float64}(e => - i.weights[e] for e in keys(i.weights))
       infeasible_solution = st_prim(SpanningTreeInstance(i.graph, infeasible_rewards)).tree
 
       if _budgeted_spanning_tree_compute_weight(i, infeasible_solution) < i.budget
