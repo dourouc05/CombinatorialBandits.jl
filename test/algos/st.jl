@@ -15,7 +15,7 @@ using Test
     @test Edge(4, 5) in s.tree
   end
 
-  @testset "Basic" begin
+  @testset "Conformity" begin
     graph = complete_graph(5)
     rewards = Dict(Edge(2, 5) => 0.0, Edge(3, 5) => 0.0, Edge(4, 5) => 1.0, Edge(1, 2) => 0.0, Edge(2, 3) => 0.0, Edge(1, 4) => 0.0, Edge(2, 4) => 0.0, Edge(1, 5) => 0.0, Edge(1, 3) => 0.0, Edge(3, 4) => 0.0)
 
@@ -29,23 +29,42 @@ using Test
 end
 
 @testset "Budgeted maximum spanning tree" begin
+  @testset "Interface" begin
+    graph = complete_graph(3)
+    rewards = Dict(Edge(1, 2) => 1.0, Edge(1, 3) => 0.5, Edge(2, 3) => 3.0)
+    weights = Dict(Edge(1, 2) => 0, Edge(1, 3) => 2, Edge(2, 3) => 0)
+    i = BudgetedSpanningTreeInstance(graph, rewards, weights, 0)
+
+    @test_throws ErrorException st_prim_budgeted_lagrangian_refinement(i, ζ⁻=1.0)
+    @test_throws ErrorException st_prim_budgeted_lagrangian_refinement(i, ζ⁻=2.0)
+    @test_throws ErrorException st_prim_budgeted_lagrangian_refinement(i, ζ⁺=1.0)
+    @test_throws ErrorException st_prim_budgeted_lagrangian_refinement(i, ζ⁺=0.2)
+  end
+
   @testset "Basic" begin
     graph = complete_graph(3)
-    costs = Dict(Edge(1, 2) => 1.0, Edge(1, 3) => 0.5, Edge(2, 3) => 3.0)
+    rewards = Dict(Edge(1, 2) => 1.0, Edge(1, 3) => 0.5, Edge(2, 3) => 3.0)
     weights = Dict(Edge(1, 2) => 0, Edge(1, 3) => 2, Edge(2, 3) => 0)
 
     ε = 0.0001
     budget = 1
 
     # Lagrangian relaxation.
-    i = BudgetedSpanningTreeInstance(graph, costs, weights, budget)
+    i = BudgetedSpanningTreeInstance(graph, rewards, weights, budget)
     lagrangian = st_prim_budgeted_lagrangian_search(i, ε)
     @test lagrangian.λ ≈ 0.25 atol=ε
     @test lagrangian.value ≈ 3.75 atol=ε
     @test length(lagrangian.tree) == 2
-    @test Edge(1, 3) in lagrangian.tree
-    @test Edge(2, 3) in lagrangian.tree
-    @test _budgeted_spanning_tree_compute_weight(i, lagrangian.tree) >= budget
+    # Two solutions have this Lagrangian cost: a feasible one and an infeasible one.
+    if Edge(1, 3) in lagrangian.tree # Strictly feasible solution.
+      @test Edge(1, 3) in lagrangian.tree
+      @test Edge(2, 3) in lagrangian.tree
+      @test _budgeted_spanning_tree_compute_weight(i, lagrangian.tree) > budget
+    else # Infeasible solution.
+      @test Edge(1, 2) in lagrangian.tree
+      @test Edge(2, 3) in lagrangian.tree
+      @test _budgeted_spanning_tree_compute_weight(i, lagrangian.tree) < budget
+    end
 
     # Helpers.
     a = [Edge(1, 2), Edge(1, 3)]

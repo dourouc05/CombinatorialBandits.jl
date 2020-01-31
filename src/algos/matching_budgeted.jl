@@ -1,6 +1,6 @@
 struct BudgetedBipartiteMatchingInstance{T, U}
   matching::BipartiteMatchingInstance{T}
-  weights::Dict{Edge{T}, U}
+  weight::Dict{Edge{T}, U}
   budget::U
 
   function BudgetedBipartiteMatchingInstance(graph::AbstractGraph{T}, rewards::Dict{Edge{T}, Float64}, weights::Dict{Edge{T}, U}, budget::U) where {T, U}
@@ -9,26 +9,30 @@ struct BudgetedBipartiteMatchingInstance{T, U}
   end
 end
 
-function _budgeted_bipartite_matching_compute_value(i::Union{BipartiteMatchingInstance{T}, BudgetedBipartiteMatchingInstance{T, U}}, solution::Vector{Edge{T}}) where T
-  return sum(i.matching.rewards[(e in keys(i.rewards)) ? e : reverse(e)] for e in solution)
+function _budgeted_bipartite_matching_compute_value(i::BudgetedBipartiteMatchingInstance{T, U}, solution::Vector{Edge{T}}) where {T, U}
+  return _budgeted_bipartite_matching_compute_value(i.matching, solution)
+end
+
+function _budgeted_bipartite_matching_compute_value(i::BipartiteMatchingInstance{T}, solution::Vector{Edge{T}}) where T
+  return sum(i.reward[(e in keys(i.reward)) ? e : reverse(e)] for e in solution)
 end
 
 function _budgeted_bipartite_matching_compute_weight(i::BudgetedBipartiteMatchingInstance{T, U}, solution::Vector{Edge{T}}) where {T, U}
-  return sum(i.weights[(e in keys(i.weights)) ? e : reverse(e)] for e in solution)
+  return sum(i.weight[(e in keys(i.weight)) ? e : reverse(e)] for e in solution)
 end
 
 abstract type BudgetedBipartiteMatchingSolution{T, U}
   # instance::BudgetedBipartiteMatchingInstance{T, U}
   # solution::Vector{Edge{T}}
-  # value::Float64
+  # value::Float64 # TODO: remove me, only useful for Lagrangian.
 end
 
 struct BudgetedBipartiteMatchingLagrangianSolution{T, U} <: BudgetedBipartiteMatchingSolution{T, U}
   # Used to store important temporary results from solving the Lagrangian dual.
   instance::BudgetedBipartiteMatchingInstance{T, U}
   solution::Vector{Edge{T}}
-  λ::Float64
-  value::Float64
+  λ::Float64 # Optimum dual multiplier.
+  value::Float64 # Optimum value of the dual problem (i.e. with penalised constraint).
   λmax::Float64 # No dual value higher than this is useful (i.e. they all yield the same solution).
 end
 
@@ -54,10 +58,10 @@ end
 function matching_hungarian_budgeted_lagrangian(i::BudgetedBipartiteMatchingInstance{T, U}, λ::Float64) where {T, U}
   # Solve the subproblem for one value of the dual multiplier λ:
   #     l(λ) = \max_{x matching} (rewards + λ weights) x - λ budget.
-  bmi_rewards = Dict{Edge{T}, Float64}(e => i.matching.rewards[e] + λ * i.weights[e] for e in keys(i.rewards))
+  bmi_rewards = Dict{Edge{T}, Float64}(e => i.matching.reward[e] + λ * i.weight[e] for e in keys(i.matching.reward))
   bmi = BipartiteMatchingInstance(i.matching, bmi_rewards)
   bmi_sol = matching_hungarian(bmi)
-  return _budgeted_bipartite_matching_compute_value(i, bmi_sol.solution) - λ * i.budget, bmi_sol.solution
+  return _budgeted_bipartite_matching_compute_value(bmi, bmi_sol.solution) - λ * i.budget, bmi_sol.solution
 end
 
 function matching_hungarian_budgeted_lagrangian_search(i::BudgetedBipartiteMatchingInstance{T, U}, ε::Float64) where {T, U}
@@ -67,10 +71,10 @@ function matching_hungarian_budgeted_lagrangian_search(i::BudgetedBipartiteMatch
   #     \max_{x matching} rewards x  s.t.  weights x >= budget.
   # This algorithm provides no guarantee on the optimality of the solution.
 
-  # TODO: generalise this function?
+  # TODO: generalise this function? Highly similar to the one for spanning trees.
 
   # Initial set of values for λ. The optimum is guaranteed to be contained in this interval.
-  weights_norm_inf = maximum(values(i.weights)) # Maximum weight.
+  weights_norm_inf = maximum(values(i.weight)) # Maximum weight.
   m = min(i.matching.n_left, i.matching.n_right) # Maximum number of items in a solution. Easy to compute for a matching!
   λmax = Float64(weights_norm_inf * m + 1)
 
@@ -95,7 +99,7 @@ function matching_hungarian_budgeted_lagrangian_search(i::BudgetedBipartiteMatch
 
   vlow, bmlow = matching_hungarian_budgeted_lagrangian(i, λlow)
   vhigh, bmhigh = matching_hungarian_budgeted_lagrangian(i, λhigh)
-  if vlow > vhigh
+  if vlow < vhigh
     return BudgetedBipartiteMatchingLagrangianSolution(i, bmlow, λlow, vlow, λmax)
   else
     return BudgetedBipartiteMatchingLagrangianSolution(i, bmhigh, λhigh, vhigh, λmax)
@@ -122,7 +126,7 @@ function matching_hungarian_budgeted_lagrangian_refinement(i::BudgetedBipartiteM
   end
 
   # Ensure the problem is feasible by only considering the budget constraint.
-  feasible_rewards = Dict{Edge{T}, Float64}(e => i.weights[e] for e in keys(i.rewards))
+  feasible_rewards = Dict{Edge{T}, Float64}(e => i.weight[e] for e in keys(i.weight))
   feasible_instance = BipartiteMatchingInstance(i.matching, feasible_rewards)
   feasible_solution = matching_hungarian(feasible_instance)
   if _budgeted_bipartite_matching_compute_value(feasible_instance, feasible_solution.solution) < i.budget
@@ -178,7 +182,7 @@ function matching_hungarian_budgeted_lagrangian_refinement(i::BudgetedBipartiteM
 
     if stalling # Second test: minimise the left-hand side of the budget constraint, in hope of finding a feasible solution.
       # This process is highly similar to the computation of feasible_solution, but with a reverse objective function.
-      infeasible_rewards = Dict{Edge{T}, Float64}(e => - i.weights[e] for e in keys(i.weights))
+      infeasible_rewards = Dict{Edge{T}, Float64}(e => - i.weight[e] for e in keys(i.weight))
       infeasible_solution = matching_hungarian(BipartiteMatchingInstance(i.graph, infeasible_rewards)).solution
 
       if _budgeted_bipartite_matching_compute_weight(i, infeasible_solution) < i.budget
@@ -218,7 +222,7 @@ function matching_hungarian_budgeted_lagrangian_refinement(i::BudgetedBipartiteM
   x⁻ = [sort_edge(e) for e in x⁻]
 
   # Iterative refinement. Stop as soon as there is a difference of at most one edge between the two solutions.
-  while _solution_symmetric_difference_size(x⁺, x⁻) > 2
+  while _solution_symmetric_difference_size(x⁺, x⁻) > 4
     # Enforce the loop invariant.
     @assert x⁺ !== nothing
     @assert x⁻ !== nothing
@@ -233,9 +237,14 @@ function matching_hungarian_budgeted_lagrangian_refinement(i::BudgetedBipartiteM
     current_vertex = src(current_edge)
     all_vertices = Set{T}(current_vertex)
     xor = xor[2:end]
-
     new_x = copy(x⁺)
-    while length(xor) > 0 # If the XOR is a path: consume all edges; otherwise, once a node is met twice, break.
+
+    while true
+      # Exit conditions:
+      # - If the XOR is a path: consume all edges; at some point, will no more
+      #   be possible to find the next one
+      # - Otherwise, once a node is met twice, break.
+
       # If the current edge is in the solution, remove it. Otherwise, add it.
       if current_edge in new_x
         filter!(e -> e != current_edge, new_x)
@@ -244,10 +253,17 @@ function matching_hungarian_budgeted_lagrangian_refinement(i::BudgetedBipartiteM
       end
 
       # Go to the next edge, following a cycle or a path.
-      current_vertex = dst(current_edge)
-      current_edge_idx = findfirst(e -> src(e) == current_vertex, xor)
-      current_edge = xor[current_edge]
-      xor = vcat(xor[1:(current_edge_idx - 1)], xor[(current_edge + 1):end])
+      if current_vertex == src(current_edge)
+        current_vertex = dst(current_edge)
+      else
+        current_vertex = src(current_edge)
+      end
+      current_edge_idx = findfirst(e -> src(e) == current_vertex || dst(e) == current_vertex, xor)
+      if isnothing(current_edge_idx)
+        break
+      end
+      current_edge = xor[current_edge_idx]
+      deleteat!(xor, current_edge_idx)
 
       # Check for a cycle.
       if current_vertex in all_vertices

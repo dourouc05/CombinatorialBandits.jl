@@ -16,15 +16,15 @@ end
 abstract type BudgetedSpanningTreeSolution{T, U}
   # instance::BudgetedSpanningTreeInstance{T, U}
   # tree::Vector{Edge{T}}
-  # value::Float64
+  # value::Float64 # TODO: remove me, only useful for Lagrangian.
 end
 
 struct BudgetedSpanningTreeLagrangianSolution{T, U} <: BudgetedSpanningTreeSolution{T, U}
   # Used to store important temporary results from solving the Lagrangian dual.
   instance::BudgetedSpanningTreeInstance{T, U}
   tree::Vector{Edge{T}}
-  λ::Float64
-  value::Float64
+  λ::Float64 # Optimum dual multiplier.
+  value::Float64 # Optimum value of the dual problem (i.e. with penalised constraint).
   λmax::Float64 # No dual value higher than this is useful (i.e. they all yield the same solution).
 end
 
@@ -53,7 +53,7 @@ function st_prim_budgeted_lagrangian(i::BudgetedSpanningTreeInstance{T, U}, λ::
   sti_rewards = Dict{Edge{T}, Float64}(e => i.rewards[e] + λ * i.weights[e] for e in keys(i.rewards))
   sti = SpanningTreeInstance(i.graph, sti_rewards)
   sti_sol = st_prim(sti)
-  return _budgeted_spanning_tree_compute_value(i, sti_sol.tree) - λ * i.budget, sti_sol.tree
+  return _budgeted_spanning_tree_compute_value(sti, sti_sol.tree) - λ * i.budget, sti_sol.tree
 end
 
 function st_prim_budgeted_lagrangian_search(i::BudgetedSpanningTreeInstance{T, U}, ε::Float64) where {T, U}
@@ -89,7 +89,7 @@ function st_prim_budgeted_lagrangian_search(i::BudgetedSpanningTreeInstance{T, U
 
   vlow, stlow = st_prim_budgeted_lagrangian(i, λlow)
   vhigh, sthigh = st_prim_budgeted_lagrangian(i, λhigh)
-  if vlow > vhigh
+  if vlow < vhigh
     return BudgetedSpanningTreeLagrangianSolution(i, stlow, λlow, vlow, λmax)
   else
     return BudgetedSpanningTreeLagrangianSolution(i, sthigh, λhigh, vhigh, λmax)
