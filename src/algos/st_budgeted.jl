@@ -241,7 +241,7 @@ function st_prim_budgeted_lagrangian_refinement(i::BudgetedSpanningTreeInstance{
   return SimpleBudgetedSpanningTreeSolution(i, x⁺)
 end
 
-function st_prim_budgeted_lagrangian_approx_half(i::BudgetedSpanningTreeInstance{T}; kwargs...) where T
+function st_prim_budgeted_lagrangian_approx_half(i::BudgetedSpanningTreeInstance{T, U}; kwargs...) where {T, U}
   # Approximately solve the following problem:
   #     \max_{x spanning tree} rewards x  s.t.  weights x >= budget
   # This algorithm provides a multiplicative approximation to this problem. If x* is the optimum solution and x~ the one
@@ -281,6 +281,8 @@ function st_prim_budgeted_lagrangian_approx_half(i::BudgetedSpanningTreeInstance
       # (Only exception: e1 and e2 are incident to the same vertex; any edge linking the other extremities of these edges
       # can be removed, but that's only one edge at most.)
       # As e1 and e2 have the best reward (as they are really bumped), they must be in any optimum solution.
+
+      # Solve this subproblem.
       bsti = BudgetedSpanningTreeInstance(graph, rewards, weights, i.budget)
       sol = st_prim_budgeted_lagrangian_refinement(bsti; kwargs...)
 

@@ -3,9 +3,9 @@ struct BudgetedBipartiteMatchingInstance{T, U}
   weight::Dict{Edge{T}, U}
   budget::U
 
-  function BudgetedBipartiteMatchingInstance(graph::AbstractGraph{T}, rewards::Dict{Edge{T}, Float64}, weights::Dict{Edge{T}, U}, budget::U) where {T, U}
-    matching = BipartiteMatchingInstance(graph, rewards)
-    return new{T, U}(matching, weights, budget)
+  function BudgetedBipartiteMatchingInstance(graph::AbstractGraph{T}, reward::Dict{Edge{T}, Float64}, weight::Dict{Edge{T}, U}, budget::U) where {T, U}
+    matching = BipartiteMatchingInstance(graph, reward)
+    return new{T, U}(matching, weight, budget)
   end
 end
 
@@ -284,4 +284,92 @@ function matching_hungarian_budgeted_lagrangian_refinement(i::BudgetedBipartiteM
   return SimpleBudgetedBipartiteMatchingSolution(i, x⁺)
 end
 
-# This is based on http://people.idsia.ch/~grandoni/Pubblicazioni/BBGS08ipco.pdf, Theorem 1.
+function _edge_any_end_match(e::Edge{T}, t::Edge{T}) where T
+  return src(e) == src(t) || dst(e) == dst(t) || src(e) == dst(t) || dst(e) == src(t)
+end
+
+function matching_hungarian_budgeted_lagrangian_approx_half(i::BudgetedBipartiteMatchingInstance{T, U}; kwargs...) where {T, U}
+  # Approximately solve the following problem:
+  #     \max_{x matching} rewards x  s.t.  weights x >= budget
+  # This algorithm provides a multiplicative approximation to this problem. If x* is the optimum solution and x~ the one
+  # returned by this algorithm,
+  #     weights x* >= budget   and   weights x~ >= budget                 (the returned solution is feasible)
+  #     rewards x~ >= (1 - ε) rewards x*                                  (multiplicative approximation)
+  # The parameter ε is not tuneable, but rather fixed to 1/2.
+
+  # This is based on http://people.idsia.ch/~grandoni/Pubblicazioni/BBGS08ipco.pdf, Theorem 1.
+
+  # If there are too few vertices, not much to do.
+  if nv(i.graph) <= 4
+    return matching_hungarian_budgeted_lagrangian_refinement(i; kwargs...)
+  end
+
+  # For each combination of four distinct edges, force these four edges to be part of the solution and discard all edges with a higher value.
+  # If selecting twice the same edge: no need to go further.
+  # If any end of two selected edges are the same: this cannot lead to a feasible solution.
+  best_sol = nothing
+  for e1 in edges(i.matching.graph)
+    for e2 in edges(i.matching.graph)
+      if _edge_any_end_match(e1, e2)
+        continue
+      end
+
+      for e3 in edges(i.matching.graph)
+        if _edge_any_end_match(e1, e3) || _edge_any_end_match(e2, e3)
+          continue
+        end
+
+        for e4 in edges(i.matching.graph)
+          if _edge_any_end_match(e1, e4) || _edge_any_end_match(e2, e4) || _edge_any_end_match(e3, e4)
+            continue
+          end
+
+          # Filter out the edges that have a higher value than any of these two edges. Give a very large reward to them both.
+          cutoff = min(i.matching.reward[e1], i.matching.reward[e2], i.matching.reward[e3], i.matching.reward[e4])
+          reward = copy(i.matching.reward)
+          filter!(kv -> kv[2] < cutoff, i.matching.reward)
+          filter!(kv -> _edge_any_end_match(kv[1], e1), i.matching.reward)
+          filter!(kv -> _edge_any_end_match(kv[1], e2), i.matching.reward)
+          filter!(kv -> _edge_any_end_match(kv[1], e3), i.matching.reward)
+          filter!(kv -> _edge_any_end_match(kv[1], e4), i.matching.reward)
+          reward[e1] = reward[e2] = reward[e3] = reward[e4] = prevfloat(Inf)
+
+          graph = SimpleGraph(nv(i.graph))
+          for e in keys(reward)
+            add_edge!(graph, e)
+          end
+
+          weight = Dict(e => i.weight[e] for e in keys(reward))
+
+          # Solve this subproblem.
+          bbmi = BudgetedBipartiteMatchingInstance(graph, reward, weight, i.budget)
+          sol = matching_hungarian_budgeted_lagrangian_refinement(bbmi; kwargs...)
+
+          # This subproblem is infeasible. Maybe it's because the overall problem is infeasible or just because too many
+          # edges were removed.
+          if length(sol.solution) == 0
+            continue
+          end
+
+          # Impossible to have a feasible solution with these two edges, probably because of the budget constraint.
+          # It's very unlikely that this happens, due to the checks already performed when looping.
+          if ! (e1 in sol.solution) || ! (e2 in sol.solution) || ! (e3 in sol.solution) || ! (e4 in sol.solution)
+            continue
+          end
+
+          # Only keep the best solution.
+          if best_sol == nothing || _budgeted_bipartite_matching_compute_value(i, sol.solution) > _budgeted_bipartite_matching_compute_value(i, best_sol.solution)
+            # sol's instance is the one used internally for the subproblems.
+            best_sol = SimpleBudgetedBipartiteMatchingSolution(i, sol.solution)
+          end
+        end
+      end
+    end
+  end
+
+  if best_sol != nothing
+    return best_sol
+  else
+    return SimpleBudgetedBipartiteMatchingSolution(i)
+  end
+end
