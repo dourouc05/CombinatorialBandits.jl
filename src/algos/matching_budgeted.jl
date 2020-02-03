@@ -183,7 +183,7 @@ function matching_hungarian_budgeted_lagrangian_refinement(i::BudgetedBipartiteM
     if stalling # Second test: minimise the left-hand side of the budget constraint, in hope of finding a feasible solution.
       # This process is highly similar to the computation of feasible_solution, but with a reverse objective function.
       infeasible_rewards = Dict{Edge{T}, Float64}(e => - i.weight[e] for e in keys(i.weight))
-      infeasible_solution = matching_hungarian(BipartiteMatchingInstance(i.graph, infeasible_rewards)).solution
+      infeasible_solution = matching_hungarian(BipartiteMatchingInstance(i.matching.graph, infeasible_rewards)).solution
 
       if _budgeted_bipartite_matching_compute_weight(i, infeasible_solution) < i.budget
         x⁻ = infeasible_solution
@@ -220,6 +220,10 @@ function matching_hungarian_budgeted_lagrangian_refinement(i::BudgetedBipartiteM
   sort_edge(e::Edge{T}) where T = (i.matching.partition[src(e)] == 1) ? e : reverse(e)
   x⁺ = [sort_edge(e) for e in x⁺]
   x⁻ = [sort_edge(e) for e in x⁻]
+
+  already_seen_solutions = Set{Set{Edge{T}}}()
+  push!(already_seen_solutions, Set(x⁺))
+  push!(already_seen_solutions, Set(x⁻))
 
   # Iterative refinement. Stop as soon as there is a difference of at most one edge between the two solutions.
   while _solution_symmetric_difference_size(x⁺, x⁻) > 4
@@ -272,6 +276,13 @@ function matching_hungarian_budgeted_lagrangian_refinement(i::BudgetedBipartiteM
       push!(all_vertices, current_vertex)
     end
 
+    # If this procedure cannot propose a new solution, it has stalled and will not recover.
+    if Set(new_x) in already_seen_solutions
+      break
+    else
+      push!(already_seen_solutions, Set(new_x))
+    end
+
     # Replace one of the two solutions, depending on whether this solution is feasible (x⁺) or not (x⁻).
     if _budgeted_bipartite_matching_compute_weight(i, new_x) >= i.budget
       x⁺ = new_x
@@ -299,14 +310,16 @@ function matching_hungarian_budgeted_lagrangian_approx_half(i::BudgetedBipartite
 
   # This is based on http://people.idsia.ch/~grandoni/Pubblicazioni/BBGS08ipco.pdf, Theorem 1.
 
-  # If there are too few vertices, not much to do.
-  if nv(i.graph) <= 4
+  # If there are too few vertices, not much to do. The smallest side of the bipartite graph must have at least 4 vertices,
+  # so that 4 of them can be fixed. (Should rather perform an exhaustive exploration.)
+  if i.matching.n_left <= 4 || i.matching.n_right <= 4
     return matching_hungarian_budgeted_lagrangian_refinement(i; kwargs...)
   end
 
   # For each combination of four distinct edges, force these four edges to be part of the solution and discard all edges with a higher value.
   # If selecting twice the same edge: no need to go further.
   # If any end of two selected edges are the same: this cannot lead to a feasible solution.
+  # Both tests are implemented in _edge_any_end_match.
   best_sol = nothing
   for e1 in edges(i.matching.graph)
     for e2 in edges(i.matching.graph)
@@ -327,14 +340,14 @@ function matching_hungarian_budgeted_lagrangian_approx_half(i::BudgetedBipartite
           # Filter out the edges that have a higher value than any of these two edges. Give a very large reward to them both.
           cutoff = min(i.matching.reward[e1], i.matching.reward[e2], i.matching.reward[e3], i.matching.reward[e4])
           reward = copy(i.matching.reward)
-          filter!(kv -> kv[2] < cutoff, i.matching.reward)
-          filter!(kv -> _edge_any_end_match(kv[1], e1), i.matching.reward)
-          filter!(kv -> _edge_any_end_match(kv[1], e2), i.matching.reward)
-          filter!(kv -> _edge_any_end_match(kv[1], e3), i.matching.reward)
-          filter!(kv -> _edge_any_end_match(kv[1], e4), i.matching.reward)
+          filter!(kv -> kv[2] < cutoff, reward)
+          filter!(kv -> _edge_any_end_match(kv[1], e1), reward)
+          filter!(kv -> _edge_any_end_match(kv[1], e2), reward)
+          filter!(kv -> _edge_any_end_match(kv[1], e3), reward)
+          filter!(kv -> _edge_any_end_match(kv[1], e4), reward)
           reward[e1] = reward[e2] = reward[e3] = reward[e4] = prevfloat(Inf)
 
-          graph = SimpleGraph(nv(i.graph))
+          graph = SimpleGraph(nv(i.matching.graph))
           for e in keys(reward)
             add_edge!(graph, e)
           end
