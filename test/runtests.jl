@@ -75,24 +75,25 @@ struct SpanningTreeNoSolver <: SpanningTreeSolver end
 solve_linear(::SpanningTreeNoSolver, ::Dict{Tuple{Int64, Int64}, Float64}) = Tuple{Int, Int}[(1, 2)]
 
 @testset "CombinatorialBandits.jl" begin
-  # @testset "Instances" begin
-  #   include("instances_elementarypath.jl")
-  #   include("instances_matching.jl")
-  #   include("instances_spanningtree.jl")
-  # end
-  #
-  # @testset "Policies" begin
-  #   include("policies_ts.jl")
-  #   include("policies_llr.jl")
-  #   include("policies_cucb.jl")
-  #   include("policies_escb2.jl")
-  # end
-  #
-  # @testset "Combinatorial algorithms" begin
-  #   include("algos/ep.jl")
-  #   include("algos/msets.jl")
+  @testset "Instances" begin
+    include("instances_elementarypath.jl")
+    include("instances_matching.jl")
+    include("instances_spanningtree.jl")
+  end
+
+  @testset "Policies" begin
+    include("policies_ts.jl")
+    include("policies_llr.jl")
+    include("policies_cucb.jl")
+    include("policies_escb2.jl")
+  end
+
+  @testset "Combinatorial algorithms" begin
+    include("algos/ep.jl")
+    include("algos/matching.jl")
+    include("algos/msets.jl")
     include("algos/st.jl")
-  # end
-  #
-  # include("main.jl")
+  end
+
+  include("main.jl")
 end

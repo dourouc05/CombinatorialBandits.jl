@@ -28,7 +28,8 @@ module CombinatorialBandits
          ElementaryPathInstance, ElementaryPathSolution, graph, costs, src, dst, cost, lp_dp,
          BudgetedLongestPathInstance, BudgetedLongestPathSolution, rewards, reward, budgeted_lp_dp,
          SpanningTreeInstance, SpanningTreeSolution, st_prim,
-         BudgetedSpanningTreeInstance, BudgetedSpanningTreeSolution, BudgetedSpanningTreeLagrangianSolution, SimpleBudgetedSpanningTreeSolution, _budgeted_spanning_tree_compute_value, _budgeted_spanning_tree_compute_weight, st_prim_budgeted_lagrangian, st_prim_budgeted_lagrangian_search, _solution_symmetric_difference, _solution_symmetric_difference_size, st_prim_budgeted_lagrangian_refinement, st_prim_budgeted_lagrangian_approx_half
+         BudgetedSpanningTreeInstance, BudgetedSpanningTreeSolution, BudgetedSpanningTreeLagrangianSolution, SimpleBudgetedSpanningTreeSolution, _budgeted_spanning_tree_compute_value, _budgeted_spanning_tree_compute_weight, st_prim_budgeted_lagrangian, st_prim_budgeted_lagrangian_search, _solution_symmetric_difference, _solution_symmetric_difference_size, st_prim_budgeted_lagrangian_refinement, st_prim_budgeted_lagrangian_approx_half,
+         BipartiteMatchingInstance, BipartiteMatchingSolution, matching_hungarian, BudgetedBipartiteMatchingInstance, BudgetedBipartiteMatchingSolution, BudgetedBipartiteMatchingLagrangianSolution, SimpleBudgetedBipartiteMatchingSolution, matching_hungarian_budgeted_lagrangian, matching_hungarian_budgeted_lagrangian_search, matching_hungarian_budgeted_lagrangian_refinement
 
   # General algorithm.
   abstract type Policy end
@@ -213,10 +214,13 @@ module CombinatorialBandits
   end
 
   ## Combinatorial algorithms. TODO: put this in another package.
-  include("algos/msets.jl")
-  include("algos/msets_budgeted.jl")
+  include("algos/helpers.jl")
   include("algos/lp.jl")
   include("algos/lp_budgeted.jl")
+  include("algos/matching.jl")
+  include("algos/matching_budgeted.jl")
+  include("algos/msets.jl")
+  include("algos/msets_budgeted.jl")
   include("algos/st.jl")
   include("algos/st_budgeted.jl")
 
