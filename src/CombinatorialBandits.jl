@@ -18,7 +18,7 @@ module CombinatorialBandits
          ThompsonSampling, LLR, CUCB, ESCB2, OLSUCB,
          ThompsonSamplingDetails, LLRDetails, CUCBDetails, ESCB2Details, OLSUCBDetails,
          ESCB2OptimisationAlgorithm, ESCB2Exact, ESCB2Greedy, ESCB2Budgeted, OLSUCBOptimisationAlgorithm, OLSUCBGreedy,
-         PerfectBipartiteMatching, UncorrelatedPerfectBipartiteMatching, CorrelatedPerfectBipartiteMatching, PerfectBipartiteMatchingSolver, PerfectBipartiteMatchingLPSolver, PerfectBipartiteMatchingMunkresSolver, PerfectBipartiteMatchingHungarianSolver,
+         PerfectBipartiteMatching, UncorrelatedPerfectBipartiteMatching, CorrelatedPerfectBipartiteMatching, PerfectBipartiteMatchingSolver, PerfectBipartiteMatchingLPSolver, PerfectBipartiteMatchingMunkresSolver, PerfectBipartiteMatchingHungarianSolver, PerfectBipartiteMatchingAlgosSolver,
          ElementaryPath, ElementaryPathSolver, ElementaryPathLightGraphsDijkstraSolver, ElementaryPathLPSolver, ElementaryPathAlgosSolver,
          SpanningTree, SpanningTreeSolver, SpanningTreeLightGraphsPrimSolver, SpanningTreeAlgosSolver, SpanningTreeLPSolver,
          MSet, MSetSolver, MSetAlgosSolver, MSetLPSolver,
@@ -239,6 +239,7 @@ module CombinatorialBandits
 
   ## Potential problems to solve.
   include("instances/perfectbipartitematching.jl")
+  include("instances/perfectbipartitematching_algos.jl")
   include("instances/perfectbipartitematching_lp.jl")
   include("instances/perfectbipartitematching_munkres.jl")
   include("instances/perfectbipartitematching_hungarian.jl")
