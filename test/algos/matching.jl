@@ -2,20 +2,69 @@ using Test
 
 @testset "Maximum bipartite matching" begin
   @testset "Interface" begin
-    # Error here: edges to the same side of the bipartite graph.
-    graph = complete_bipartite_graph(5, 5)
+    n = 5
+
+    # Error: the graph is not bipartite.
+    graph = complete_graph(n) # Requires n > 2
     rewards = Dict{Edge{Int}, Float64}()
-    weights = Dict{Edge{Int}, Int}()
-    for i in 1:5
-      for j in 1:5
-        rewards[Edge(i, j)] = (i == j) ? 1.0 : 0.0
-        weights[Edge(i, j)] = (i == j) ? 0 : 1
+    for i in 1:n
+      for j in 1:n
+        if i != j
+          rewards[Edge(i, j)] = 1.0
+        end
       end
     end
-    budget = 0
-    ε = 0.0001
-    i = BudgetedBipartiteMatchingInstance(graph, rewards, weights, budget)
-    @test_throws AssertionError matching_hungarian_budgeted_lagrangian_search(i, ε)
+    @test_throws ErrorException BipartiteMatchingInstance(graph, rewards)
+
+    # Error: edges to the same side of the bipartite graph.
+    # Both in the left part.
+    graph = complete_bipartite_graph(n, n)
+    rewards = Dict{Edge{Int}, Float64}()
+    for i in 1:n
+      for j in 1:n
+        rewards[Edge(i, j)] = 1.0
+      end
+    end
+    i = BipartiteMatchingInstance(graph, rewards)
+    @test_throws ErrorException matching_hungarian(i)
+
+    # Both in the right part.
+    rewards = Dict{Edge{Int}, Float64}()
+    for i in 1:n
+      for j in 1:n
+        rewards[Edge(i + n, j + n)] = 1.0
+      end
+    end
+    i = BipartiteMatchingInstance(graph, rewards)
+    @test_throws ErrorException matching_hungarian(i)
+
+    # Automatic handling: edges are not from V1 to V2 in the bipartite graph.
+    rewards = Dict{Edge{Int}, Float64}()
+    weights = Dict{Edge{Int}, Int}()
+    for i in 1:n
+      for j in 1:n
+        rewards[Edge(j, i + n)] = 1.0
+      end
+    end
+    i = BipartiteMatchingInstance(graph, rewards)
+    @test matching_hungarian(i) != π # Just a @test_nothrows: https://github.com/JuliaLang/julia/issues/18780
+
+    # Test the partial-copy constructor.
+    rewards = Dict{Edge{Int}, Float64}()
+    for i in 1:n
+      for j in 1:n
+        rewards[Edge(j, i + n)] = 2.0
+      end
+    end
+    i2 = BipartiteMatchingInstance(i, rewards)
+    @test i.graph == i2.graph
+    @test i.reward != i2.reward # Only difference to be found.
+    @test i2.reward == rewards
+    @test i.partition == i2.partition
+    @test i.n_left == i2.n_left
+    @test i.n_right == i2.n_right
+    @test i.vertex_left == i2.vertex_left
+    @test i.vertex_right == i2.vertex_right
   end
 
   @testset "Basic" begin
@@ -32,6 +81,47 @@ using Test
     @test Edge(2, 5) in s.solution
     @test Edge(3, 6) in s.solution
     @test s.value ≈ 3.0
+  end
+
+  @testset "Conformity" begin
+    # Just a larger graph.
+    n = 5
+    graph = complete_bipartite_graph(n, n)
+
+    rewards = Dict{Edge{Int}, Float64}()
+    for i in 1:n
+      for j in 1:n
+        rewards[Edge(i, j + n)] = 1.0
+      end
+    end
+
+    i = BipartiteMatchingInstance(graph, rewards)
+    s = matching_hungarian(i)
+    @test s.instance == i
+    @test length(s.solution) == n
+    for i in 1:n
+      @test Edge(i, i + n) in s.solution
+    end
+    @test s.value ≈ n
+
+    # Ensure one node has no matching in V1.
+    graph = complete_bipartite_graph(n - 1, n)
+
+    rewards = Dict{Edge{Int}, Float64}()
+    for i in 1:(n - 1)
+      for j in 1:n
+        rewards[Edge(i, j + n - 1)] = 1.0
+      end
+    end
+
+    i = BipartiteMatchingInstance(graph, rewards)
+    s = matching_hungarian(i)
+    @test s.instance == i
+    @test length(s.solution) == n - 1
+    for i in 1:(n - 1)
+      @test Edge(i, i + n - 1) in s.solution
+    end
+    @test s.value ≈ n - 1.0
   end
 end
 

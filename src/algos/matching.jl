@@ -30,7 +30,7 @@ struct BipartiteMatchingInstance{T}
     @assert length(vertex_right) == n_right
     @assert n_left + n_right == nv(graph)
 
-    return new{T}(graph, reward, bmap, n_left, n_right, vertex_left, vertex_right)
+    return new{T}(copy(graph), copy(reward), bmap, n_left, n_right, vertex_left, vertex_right)
   end
 
   function BipartiteMatchingInstance(i::BipartiteMatchingInstance{T}, reward::Dict{Edge{T}, Float64}) where T
@@ -64,17 +64,16 @@ function matching_hungarian(i::BipartiteMatchingInstance{T}) where T
     # Simple check for errors. This should only happen when the rewards dictionary has entries that do not match
     # edges in the (bipartite) graph.
     if isnothing(idx1) || isnothing(idx2)
-      println("Indices not found for edge $k.")
-
+      msg = "Indices not found for edge $k. Both ends of the edge belong to the "
       if ! isnothing(findfirst(i.vertex_left .== src(k))) && ! isnothing(findfirst(i.vertex_left .== dst(k)))
-        println("Both ends of the edge belong to the left part of the bipartite graph!")
+        msg *= "left"
       elseif ! isnothing(findfirst(i.vertex_right .== src(k))) && ! isnothing(findfirst(i.vertex_right .== dst(k)))
-        println("Both ends of the edge belong to the right part of the bipartite graph!")
+        msg *= "right"
       end
+      msg *= " part of the bipartite graph!"
 
       # Ensure that execution is stopped now...
-      @assert ! isnothing(idx1)
-      @assert ! isnothing(idx2)
+      error(msg)
     end
 
     reward_matrix[idx1, idx2] = v
