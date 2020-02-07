@@ -38,3 +38,7 @@ Implement a refined approximation algorithm for budgeted maximum spanning trees.
 It now provides a traditional approximation factor (1/2) instead of an
 approximation term. See comments around `st_prim_budgeted_lagrangian_approx_half`
 for more details.
+
+## 0.1.2
+
+Quite a bit of bug fixing, especially regarding matching algorithms. 
