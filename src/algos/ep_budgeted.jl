@@ -1,4 +1,4 @@
-struct BudgetedLongestPathInstance{T}
+struct BudgetedElementaryPathInstance{T}
   graph::AbstractGraph{T}
   rewards::Dict{Edge{T}, Float64}
   weights::Dict{Edge{T}, Int}
@@ -6,12 +6,10 @@ struct BudgetedLongestPathInstance{T}
   dst::T
 
   budget::Int # weights * solution >= budget
-  max_weight::Int
 
-  function BudgetedLongestPathInstance(graph::AbstractGraph{T}, rewards::Dict{Edge{T}, Float64},
+  function BudgetedElementaryPathInstance(graph::AbstractGraph{T}, rewards::Dict{Edge{T}, Float64},
                                        weights::Dict{Edge{T}, Int}, src::T, dst::T;
-                                       budget::Union{Nothing, Int}=nothing,
-                                       max_weight::Union{Nothing, Int}=nothing) where T
+                                       budget::Union{Nothing, Int}=nothing) where T
     # Error checking.
     if src == dst
       error("Source node is the same as destination node.")
@@ -30,7 +28,7 @@ struct BudgetedLongestPathInstance{T}
     end
 
     # Complete the optional parameters.
-    if isnothing(max_weight)
+    if isnothing(max_weight) # Not useful to store, it is just used to compute the max budget if it is not given.
       max_weight = maximum(collect(values(weights)))
     end
 
@@ -40,41 +38,40 @@ struct BudgetedLongestPathInstance{T}
     end
 
     # Return a new instance.
-    new{T}(graph, rewards, weights, src, dst, budget, max_weight)
+    new{T}(graph, rewards, weights, src, dst, budget)
   end
 end
 
-graph(i::BudgetedLongestPathInstance{T}) where T = i.graph
-rewards(i::BudgetedLongestPathInstance{T}) where T = i.rewards
-weights(i::BudgetedLongestPathInstance{T}) where T = i.weights
-src(i::BudgetedLongestPathInstance{T}) where T = i.src
-dst(i::BudgetedLongestPathInstance{T}) where T = i.dst
-budget(i::BudgetedLongestPathInstance{T}) where T = i.budget
-max_weight(i::BudgetedLongestPathInstance{T}) where T = i.max_weight
+graph(i::BudgetedElementaryPathInstance{T}) where T = i.graph
+rewards(i::BudgetedElementaryPathInstance{T}) where T = i.rewards
+weights(i::BudgetedElementaryPathInstance{T}) where T = i.weights
+src(i::BudgetedElementaryPathInstance{T}) where T = i.src
+dst(i::BudgetedElementaryPathInstance{T}) where T = i.dst
+budget(i::BudgetedElementaryPathInstance{T}) where T = i.budget
 
-dimension(i::BudgetedLongestPathInstance{T}) where T = ne(graph(i))
-reward(i::BudgetedLongestPathInstance{T}, u::T, v::T) where T = rewards(i)[Edge(u, v)]
-weight(i::BudgetedLongestPathInstance{T}, u::T, v::T) where T = weights(i)[Edge(u, v)]
+# dimension(i::BudgetedElementaryPathInstance{T}) where T = ne(graph(i))
+reward(i::BudgetedElementaryPathInstance{T}, u::T, v::T) where T = rewards(i)[Edge(u, v)]
+weight(i::BudgetedElementaryPathInstance{T}, u::T, v::T) where T = weights(i)[Edge(u, v)]
 
-struct BudgetedLongestPathSolution{T}
-  instance::BudgetedLongestPathInstance{T}
+struct BudgetedElementaryPathSolution{T}
+  instance::BudgetedElementaryPathInstance{T}
   path::Vector{Edge{T}}
   states::Dict{Tuple{T, Int}, Float64}
   solutions::Dict{Tuple{T, Int}, Vector{Edge{T}}}
 end
 
-function paths_all_budgets(s::BudgetedLongestPathSolution{T}, max_budget::Int) where T
+function paths_all_budgets(s::BudgetedElementaryPathSolution{T}, max_budget::Int) where T
   return Dict{Int, Vector{Edge{T}}}(
     budget => s.solutions[s.instance.dst, budget] for budget in 0:max_budget)
 end
 
-function paths_all_budgets_as_tuples(s::BudgetedLongestPathSolution{T}, max_budget::Int) where T
+function paths_all_budgets_as_tuples(s::BudgetedElementaryPathSolution{T}, max_budget::Int) where T
   return Dict{Int, Vector{Tuple{T, T}}}(
     budget => [(src(e), dst(e)) for e in s.solutions[s.instance.dst, budget]]
     for budget in 0:max_budget)
 end
 
-function budgeted_lp_dp(i::BudgetedLongestPathInstance{T}) where T
+function budgeted_lp_dp(i::BudgetedElementaryPathInstance{T}) where T
   V = Dict{Tuple{T, Int}, Float64}()
   S = Dict{Tuple{T, Int}, Vector{Edge{T}}}()
 
@@ -98,7 +95,7 @@ function budgeted_lp_dp(i::BudgetedLongestPathInstance{T}) where T
 
   # Dynamic part.
   for β in 1:budget(i)
-    # Loop needed when at least a weight is equal to zero. TODO: remove it when all weights are nonzero? 
+    # Loop needed when at least a weight is equal to zero. TODO: remove it when all weights are nonzero?
     while true
       changed = false
 
@@ -143,5 +140,5 @@ function budgeted_lp_dp(i::BudgetedLongestPathInstance{T}) where T
     end
   end
 
-  return BudgetedLongestPathSolution(i, S[dst(i), budget(i)], V, S)
+  return BudgetedElementaryPathSolution(i, S[dst(i), budget(i)], V, S)
 end

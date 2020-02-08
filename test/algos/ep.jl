@@ -1,6 +1,6 @@
 using Test
 
-@testset "Longest paths" begin
+@testset "Elementary paths" begin
   # Create a directed path graph.
   g = path_digraph(3)
   costs = Dict(Edge(1, 2) => 1.0, Edge(2, 3) => 1.0)
@@ -25,13 +25,13 @@ using Test
   @test_logs (:warn, "The graph contains a positive-cost cycle around edge 2 -> 1.") lp_dp(i)
 end
 
-@testset "Budgeted longest paths" begin
+@testset "Budgeted elementary paths" begin
   @testset "Basic" begin
     # Create a directed path graph.
     g = path_digraph(3)
     rewards = Dict(Edge(1, 2) => 1.0, Edge(2, 3) => 1.0)
     weights = Dict(Edge(1, 2) => 1, Edge(2, 3) => 1)
-    i = BudgetedLongestPathInstance(g, rewards, weights, 1, 3, budget=4, max_weight=1)
+    i = BudgetedElementaryPathInstance(g, rewards, weights, 1, 3, budget=4, max_weight=1)
     d = budgeted_lp_dp(i)
 
     @test d.instance == i
@@ -51,7 +51,7 @@ end
     add_edge!(g, 1, 3)
     rewards[Edge(1, 3)] = 1.0
     weights[Edge(1, 3)] = 4
-    i = BudgetedLongestPathInstance(g, rewards, weights, 1, 3, budget=4, max_weight=1)
+    i = BudgetedElementaryPathInstance(g, rewards, weights, 1, 3, budget=4, max_weight=1)
     d = budgeted_lp_dp(i)
 
     @test d.instance == i
@@ -63,7 +63,7 @@ end
     g = complete_digraph(3)
     rewards = Dict(Edge(1, 2) => 1.0, Edge(3, 1) => -1.0, Edge(3, 2) => -1.0, Edge(2, 3) => 1.0, Edge(2, 1) => -1.0, Edge(1, 3) => 0.0)
     weights = Dict(Edge(1, 2) => 0, Edge(3, 1) => 0, Edge(3, 2) => 0, Edge(2, 3) => 0, Edge(2, 1) => 0, Edge(1, 3) => 2)
-    i = BudgetedLongestPathInstance(g, rewards, weights, 1, 3, budget=2, max_weight=1)
+    i = BudgetedElementaryPathInstance(g, rewards, weights, 1, 3, budget=2, max_weight=1)
     d = budgeted_lp_dp(i)
 
     @test d.path == [Edge(1, 3)]
