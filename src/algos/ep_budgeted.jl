@@ -8,8 +8,9 @@ struct BudgetedElementaryPathInstance{T}
   budget::Int # weights * solution >= budget
 
   function BudgetedElementaryPathInstance(graph::AbstractGraph{T}, rewards::Dict{Edge{T}, Float64},
-                                       weights::Dict{Edge{T}, Int}, src::T, dst::T;
-                                       budget::Union{Nothing, Int}=nothing) where T
+                                          weights::Dict{Edge{T}, Int}, src::T, dst::T;
+                                          budget::Union{Nothing, Int}=nothing,
+                                          max_weight::Union{Nothing, Int}=nothing) where T
     # Error checking.
     if src == dst
       error("Source node is the same as destination node.")
@@ -61,14 +62,24 @@ struct BudgetedElementaryPathSolution{T}
 end
 
 function paths_all_budgets(s::BudgetedElementaryPathSolution{T}, max_budget::Int) where T
+  if max_budget > budget(s.instance)
+    @warn "The asked maximum budget $max_budget is higher than the instance budget $(budget(s.instance)). Therefore, some values have not been computed and are unavailable."
+  end
+
+  mb = min(max_budget, budget(s.instance))
   return Dict{Int, Vector{Edge{T}}}(
-    budget => s.solutions[s.instance.dst, budget] for budget in 0:max_budget)
+    budget => s.solutions[s.instance.dst, budget] for budget in 0:mb)
 end
 
 function paths_all_budgets_as_tuples(s::BudgetedElementaryPathSolution{T}, max_budget::Int) where T
+  if max_budget > budget(s.instance)
+    @warn "The asked maximum budget $max_budget is higher than the instance budget $(budget(s.instance)). Therefore, some values have not been computed and are unavailable."
+  end
+
+  mb = min(max_budget, budget(s.instance))
   return Dict{Int, Vector{Tuple{T, T}}}(
     budget => [(src(e), dst(e)) for e in s.solutions[s.instance.dst, budget]]
-    for budget in 0:max_budget)
+    for budget in 0:mb)
 end
 
 function budgeted_lp_dp(i::BudgetedElementaryPathInstance{T}) where T

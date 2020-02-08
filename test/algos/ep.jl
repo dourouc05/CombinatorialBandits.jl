@@ -1,31 +1,55 @@
 using Test
 
 @testset "Elementary paths" begin
-  # Create a directed path graph.
-  g = path_digraph(3)
-  costs = Dict(Edge(1, 2) => 1.0, Edge(2, 3) => 1.0)
-  i = ElementaryPathInstance(g, costs, 1, 3)
-  d = lp_dp(i)
+  @testset "Interface" begin
+    @testset "Positive-reward cycle" begin
+      g = path_digraph(3)
+      add_edge!(g, 2, 1)
+      costs = Dict(Edge(1, 2) => 1.0, Edge(2, 3) => 3.0, Edge(2, 1) => 25.0)
 
-  @test d.instance == i
-  @test d.path == [Edge(1, 2), Edge(2, 3)]
+      i = ElementaryPathInstance(g, costs, 1, 3)
+      @test_logs (:warn, "The graph contains a positive-cost cycle around edge 2 -> 1.") lp_dp(i)
+    end
+  end
 
-  add_edge!(g, 1, 3)
-  costs[Edge(1, 3)] = 3.0
-  i = ElementaryPathInstance(g, costs, 1, 3)
-  d = lp_dp(i)
+  @testset "Basic" begin
+    g = path_digraph(3)
+    costs = Dict(Edge(1, 2) => 1.0, Edge(2, 3) => 1.0)
+    i = ElementaryPathInstance(g, costs, 1, 3)
+    d = lp_dp(i)
 
-  @test d.instance == i
-  @test d.path == [Edge(1, 3)]
+    @test d.instance == i
+    @test d.path == [Edge(1, 2), Edge(2, 3)]
 
-  # Positive-cost cycle.
-  add_edge!(g, 2, 1)
-  costs[Edge(2, 1)] = 25.0
-  i = ElementaryPathInstance(g, costs, 1, 3)
-  @test_logs (:warn, "The graph contains a positive-cost cycle around edge 2 -> 1.") lp_dp(i)
+    add_edge!(g, 1, 3)
+    costs[Edge(1, 3)] = 3.0
+    i = ElementaryPathInstance(g, costs, 1, 3)
+    d = lp_dp(i)
+
+    @test d.instance == i
+    @test d.path == [Edge(1, 3)]
+  end
 end
 
 @testset "Budgeted elementary paths" begin
+  @testset "Interface" begin
+    @testset "Constructor" begin
+      g = path_digraph(3)
+      rewards = Dict(Edge(1, 2) => 1.0, Edge(2, 3) => 1.0)
+      weights = Dict(Edge(1, 2) => 1, Edge(2, 3) => 1)
+      @test_throws ErrorException BudgetedElementaryPathInstance(g, rewards, weights, 1, 1)
+      @test_throws ErrorException BudgetedElementaryPathInstance(g, rewards, weights, 1, 2, budget=-1)
+
+      rewards[Edge(4, 1)] = 1.0
+      @test_throws ErrorException BudgetedElementaryPathInstance(g, rewards, weights, 1, 1)
+      weights[Edge(4, 1)] = 1
+      weights[Edge(4, 2)] = 1
+      @test_throws ErrorException BudgetedElementaryPathInstance(g, rewards, weights, 1, 1)
+      weights[Edge(4, 2)] = -1
+      @test_throws ErrorException BudgetedElementaryPathInstance(g, rewards, weights, 1, 1)
+    end
+  end
+
   @testset "Basic" begin
     # Create a directed path graph.
     g = path_digraph(3)
@@ -56,6 +80,15 @@ end
 
     @test d.instance == i
     @test d.path == [Edge(1, 3)]
+
+    warn_msg = "The asked maximum budget 5 is higher than the instance budget 4. Therefore, some values have not been computed and are unavailable."
+    @test_logs (:warn, warn_msg) CombinatorialBandits.paths_all_budgets_as_tuples(d, 5)
+    sol = Dict(0 => [(1, 2), (2, 3)], 1 => [(1, 2), (2, 3)], 2 => [(1, 2), (2, 3)], 3 => [(1, 3)], 4 => [(1, 3)])
+    @test CombinatorialBandits.paths_all_budgets_as_tuples(d, 4) == sol
+
+    @test_logs (:warn, warn_msg) CombinatorialBandits.paths_all_budgets(d, 5)
+    sol = Dict(0 => [Edge(1, 2), Edge(2, 3)], 1 => [Edge(1, 2), Edge(2, 3)], 2 => [Edge(1, 2), Edge(2, 3)], 3 => [Edge(1, 3)], 4 => [Edge(1, 3)])
+    @test CombinatorialBandits.paths_all_budgets(d, 4) == sol
   end
 
   @testset "Conformity" begin
@@ -64,7 +97,8 @@ end
     rewards = Dict(Edge(1, 2) => 1.0, Edge(3, 1) => -1.0, Edge(3, 2) => -1.0, Edge(2, 3) => 1.0, Edge(2, 1) => -1.0, Edge(1, 3) => 0.0)
     weights = Dict(Edge(1, 2) => 0, Edge(3, 1) => 0, Edge(3, 2) => 0, Edge(2, 3) => 0, Edge(2, 1) => 0, Edge(1, 3) => 2)
     i = BudgetedElementaryPathInstance(g, rewards, weights, 1, 3, budget=2, max_weight=1)
-    d = budgeted_lp_dp(i)
+    warn_msg = "The graph contains a positive-cost cycle around edge 3 -> 1."
+    d = @test_logs (:warn, warn_msg) budgeted_lp_dp(i)
 
     @test d.path == [Edge(1, 3)]
 
