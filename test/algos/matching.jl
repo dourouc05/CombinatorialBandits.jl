@@ -161,6 +161,15 @@ end
     s1 = SimpleBudgetedBipartiteMatchingSolution(i) == SimpleBudgetedBipartiteMatchingSolution(i, edgetype(graph)[])
   end
 
+  @testset "Helpers" begin
+    @test CombinatorialBandits._edge_any_end_match(Edge(1, 2), Edge(1, 2))
+    @test CombinatorialBandits._edge_any_end_match(Edge(1, 2), Edge(1, 3))
+    @test CombinatorialBandits._edge_any_end_match(Edge(1, 2), Edge(4, 2))
+    @test CombinatorialBandits._edge_any_end_match(Edge(1, 3), Edge(1, 2))
+    @test CombinatorialBandits._edge_any_end_match(Edge(4, 2), Edge(1, 2))
+    @test ! CombinatorialBandits._edge_any_end_match(Edge(1, 2), Edge(3, 4))
+  end
+
   @testset "Basic: 2×2" begin
     # Two nodes on each side (1-2 to the left, 3-4 to the right),
     # unbudgeted optimum is matching them in order (1-3, 2-4).
@@ -315,54 +324,100 @@ end
     end
   end
 
-  # @testset "Conformity: 5×5" begin
-  #   # Larger graph, to test more parts of the approximation scheme (fixing four edges in the 1/2 scheme, so take
-  #   # at least one more so that the underlying additive approximation scheme has some work to do).
-  #   graph = complete_bipartite_graph(5, 5)
-  #   rewards = Dict{Edge{Int}, Float64}()
-  #   weights = Dict{Edge{Int}, Int}()
-  #   for i in 1:5
-  #     for j in 1:5
-  #       k = j + 5
-  #       rewards[Edge(i, k)] = (i == j) ? 1.0 : 0.0
-  #       weights[Edge(i, k)] = (i == j) ? 0 : 1
-  #     end
-  #   end
-  #   ε = 0.0001
-  #
-  #   budget = 0
-  #   i = BudgetedBipartiteMatchingInstance(graph, rewards, weights, budget)
-  #   s = matching_hungarian_budgeted_lagrangian_search(i, ε)
-  #
-  #   @test s.instance == i
-  #   @test length(s.solution) == 5
-  #   @test Edge(1, 6) in s.solution
-  #   @test Edge(2, 7) in s.solution
-  #   @test Edge(3, 8) in s.solution
-  #   @test Edge(4, 9) in s.solution
-  #   @test Edge(5, 10) in s.solution
-  #   @test s.value ≈ 5.0 atol=ε
-  #   @test CombinatorialBandits._budgeted_bipartite_matching_compute_value(i, s.solution) ≈ 5.0 atol=ε
-  #   @test CombinatorialBandits._budgeted_bipartite_matching_compute_weight(i, s.solution) ≈ 0.0 atol=ε
-  #
-  #   s = matching_hungarian_budgeted_lagrangian_refinement(i)
-  #
-  #   @test s.instance == i
-  #   @test length(s.solution) == 5
-  #   @test Edge(1, 6) in s.solution
-  #   @test Edge(2, 7) in s.solution
-  #   @test Edge(3, 8) in s.solution
-  #   @test Edge(4, 9) in s.solution
-  #   @test Edge(5, 10) in s.solution
-  #   @test s.value ≈ 5.0 atol=ε
-  #   @test CombinatorialBandits._budgeted_bipartite_matching_compute_value(i, s.solution) ≈ 5.0 atol=ε
-  #   @test CombinatorialBandits._budgeted_bipartite_matching_compute_weight(i, s.solution) ≈ 0.0 atol=ε
-  #
-  #   s = matching_hungarian_budgeted_lagrangian_approx_half(i)
-  #
-  #   @test s.instance == i
-  #   @test s.value >= 2.5
-  #   @test CombinatorialBandits._budgeted_bipartite_matching_compute_value(i, s.solution) >= 2.5
-  #   @test CombinatorialBandits._budgeted_bipartite_matching_compute_weight(i, s.solution) >= 0.0
-  # end
+  # Not really useful to test 4×4, as everything would be fixed by the major loops in the 1/2 scheme.
+
+  @testset "Conformity: 5×5" begin
+    # Larger graph, to test more parts of the approximation scheme (fixing four edges in the 1/2 scheme, so take
+    # at least one more so that the underlying additive approximation scheme has some work to do).
+    graph = complete_bipartite_graph(5, 5)
+    rewards = Dict{Edge{Int}, Float64}()
+    weights = Dict{Edge{Int}, Int}()
+    for i in 1:5
+      for j in 1:5
+        k = j + 5
+        rewards[Edge(i, k)] = (i == j) ? 1.0 : 0.0
+        weights[Edge(i, k)] = (i == j) ? 0 : 1
+      end
+    end
+    ε = 0.0001
+    max_reward_edges = [Edge(1, 6), Edge(2, 7), Edge(3, 8), Edge(4, 9), Edge(5, 10)]
+
+    @testset "No budget constraint" begin
+      budget = 0
+      i = BudgetedBipartiteMatchingInstance(graph, rewards, weights, budget)
+
+      s1 = matching_hungarian_budgeted_lagrangian_search(i, ε)
+      s2 = matching_hungarian_budgeted_lagrangian_refinement(i)
+      s3 = matching_hungarian_budgeted_lagrangian_approx_half(i)
+
+      @test s1.value ≈ 5.0 atol=ε # Lagrangian value.
+
+      for s in [s1, s2, s3]
+        @test s.instance == i
+        @test length(s.solution) == 5
+
+        for e in max_reward_edges
+          @test e in s.solution
+        end
+
+        @test CombinatorialBandits._budgeted_bipartite_matching_compute_value(i, s.solution) ≈ 5.0 atol=ε
+        @test CombinatorialBandits._budgeted_bipartite_matching_compute_weight(i, s.solution) ≈ 0.0 atol=ε
+      end
+    end
+
+    @testset "Loose budget constraint" begin
+      budget = 1
+      i = BudgetedBipartiteMatchingInstance(graph, rewards, weights, budget)
+
+      # Don't test Lagrangian relaxation now, constraint is not respected.
+      s2 = matching_hungarian_budgeted_lagrangian_refinement(i)
+      s3 = matching_hungarian_budgeted_lagrangian_approx_half(i)
+
+      for s in [s2, s3]
+        @test s.instance == i
+        @test length(s.solution) == 5
+
+        n_max_reward_edges = sum(e in s.solution for e in max_reward_edges)
+        @test n_max_reward_edges <= 4
+
+        @test CombinatorialBandits._budgeted_bipartite_matching_compute_value(i, s.solution) ≈ 3.0 atol=ε
+        @test CombinatorialBandits._budgeted_bipartite_matching_compute_weight(i, s.solution) ≈ 2.0 atol=ε
+      end
+    end
+
+    @testset "Tight budget constraint" begin
+      budget = 5
+      i = BudgetedBipartiteMatchingInstance(graph, rewards, weights, budget)
+
+      # Don't test Lagrangian relaxation now, constraint is not respected.
+      s2 = matching_hungarian_budgeted_lagrangian_refinement(i)
+      s3 = matching_hungarian_budgeted_lagrangian_approx_half(i)
+
+      for s in [s2, s3]
+        @test s.instance == i
+        @test length(s.solution) == 5
+
+        for e in max_reward_edges
+          @test ! (e in s.solution)
+        end
+
+        @test CombinatorialBandits._budgeted_bipartite_matching_compute_value(i, s.solution) ≈ 0.0 atol=ε
+        @test CombinatorialBandits._budgeted_bipartite_matching_compute_weight(i, s.solution) ≈ 5.0 atol=ε
+      end
+    end
+
+    @testset "Impossibly tight budget constraint" begin
+      budget = 6
+      i = BudgetedBipartiteMatchingInstance(graph, rewards, weights, budget)
+
+      # Don't test Lagrangian relaxation now, constraint is not respected.
+      s2 = matching_hungarian_budgeted_lagrangian_refinement(i)
+      s3 = matching_hungarian_budgeted_lagrangian_approx_half(i)
+
+      for s in [s2, s3]
+        @test s.instance == i
+        @test length(s.solution) == 0
+      end
+    end
+  end
 end

@@ -16,7 +16,7 @@ function build!(solver::PerfectBipartiteMatchingLPSolver, n_arms::Int)
   # Build the optimisation model behind solve_linear.
   solver.model = Model(solver.solver)
   indices = collect((i, j) for i in 1:n_arms, j in 1:n_arms)
-  solver.x = @variable(solver.model, [indices], lower_bound=0, upper_bound=1)
+  solver.x = @variable(solver.model, [indices], binary=true)
 
   for i in 1:n_arms # Left nodes.
     @constraint(solver.model, sum(solver.x[(i, j)] for j in 1:n_arms) <= 1)

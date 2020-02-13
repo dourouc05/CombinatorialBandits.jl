@@ -30,7 +30,7 @@ function solve_budgeted_linear(solver::ElementaryPathAlgosSolver,
                                reward::Dict{Tuple{Int, Int}, Float64},
                                weights::Dict{Tuple{Int, Int}, Int},
                                budget::Int)
-  i = BudgetedLongestPathInstance(solver.graph,
+  i = BudgetedElementaryPathInstance(solver.graph,
     _tuple_dict_to_edge_dict(reward), _tuple_dict_to_edge_dict(weights),
     solver.source, solver.destination, budget=budget)
   s = budgeted_lp_dp(i).path
@@ -41,7 +41,7 @@ function solve_all_budgeted_linear(solver::ElementaryPathAlgosSolver,
                                    reward::Dict{Tuple{Int, Int}, Float64},
                                    weights::Dict{Tuple{Int, Int}, Int},
                                    max_budget::Int)
-  i = BudgetedLongestPathInstance(solver.graph,
+  i = BudgetedElementaryPathInstance(solver.graph,
     _tuple_dict_to_edge_dict(reward), _tuple_dict_to_edge_dict(weights),
     solver.source, solver.destination, budget=max_budget)
   return paths_all_budgets_as_tuples(budgeted_lp_dp(i), max_budget)

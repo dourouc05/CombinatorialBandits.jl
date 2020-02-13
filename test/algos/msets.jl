@@ -1,29 +1,45 @@
 using Test
 
 @testset "m-sets" begin
-  m = 2
-  i = MSetInstance(Float64[5, 4, 3], m)
-  g = msets_greedy(i)
-  d = msets_dp(i)
-  l = ! is_travis && msets_lp(i, solver=Gurobi.Optimizer)
+  @testset "Interface" begin
+    @test_throws ErrorException MSetInstance(Float64[5, 4, 3], -1)
+    @test_throws ErrorException MSetInstance(Float64[5, 4, 3], 0)
+  end
 
-  @test i.m == m
+  @testset "Basic" begin
+    m = 2
+    i = MSetInstance(Float64[5, 4, 3], m)
+    g = msets_greedy(i)
+    d = msets_dp(i)
+    l = ! is_travis && msets_lp(i, solver=Gurobi.Optimizer)
 
-  @test value(g) == value(d)
-  @test length(g.items) <= m
-  @test length(d.items) <= m
+    @test i.m == m
 
-  @test g.instance == i
-  @test d.instance == i
+    @test value(g) == value(d)
+    @test length(g.items) <= m
+    @test length(d.items) <= m
 
-  if ! is_travis
-    @test value(g) == value(l)
-    @test length(l.items) <= m
-    @test l.instance == i
+    @test g.instance == i
+    @test d.instance == i
+
+    if ! is_travis
+      @test value(g) == value(l)
+      @test length(l.items) <= m
+      @test l.instance == i
+    end
   end
 end
 
 @testset "Budgeted m-sets" begin
+  @testset "Interface" begin
+    @test_throws ErrorException BudgetedMSetInstance(Float64[5, 4, 3], Int[1, 1, 1], -1)
+    @test_throws ErrorException BudgetedMSetInstance(Float64[5, 4, 3], Int[1, 1, 1], 0)
+    @test_throws ErrorException BudgetedMSetInstance(Float64[5, 4, 3], Int[1, 1, 1], 2, budget=-1)
+    @test_throws ErrorException BudgetedMSetInstance(Float64[5, 4, 3], Int[1, -1, 1], 2)
+    @test_throws ErrorException BudgetedMSetInstance(Float64[5, 4, 3], Int[1, 1], 0)
+    @test_throws ErrorException BudgetedMSetInstance(Float64[5, 4], Int[1, 1, 1], 0)
+  end
+
   function test_solution_at(s::BudgetedMSetSolution, kv::Dict{Int, Float64})
     for (k, v) in kv
       @test value(s, k) ≈ v

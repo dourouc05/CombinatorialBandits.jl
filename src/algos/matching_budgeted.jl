@@ -311,8 +311,9 @@ function matching_hungarian_budgeted_lagrangian_approx_half(i::BudgetedBipartite
   # This is based on http://people.idsia.ch/~grandoni/Pubblicazioni/BBGS08ipco.pdf, Theorem 1.
 
   # If there are too few vertices, not much to do. The smallest side of the bipartite graph must have at least 4 vertices,
-  # so that 4 of them can be fixed. (Should rather perform an exhaustive exploration.)
+  # so that 4 of them can be fixed.
   if i.matching.n_left <= 4 || i.matching.n_right <= 4
+    # TODO: Should rather perform an exhaustive exploration.
     return matching_hungarian_budgeted_lagrangian_refinement(i; kwargs...)
   end
 
@@ -340,12 +341,16 @@ function matching_hungarian_budgeted_lagrangian_approx_half(i::BudgetedBipartite
           # Filter out the edges that have a higher value than any of these two edges. Give a very large reward to them both.
           cutoff = min(i.matching.reward[e1], i.matching.reward[e2], i.matching.reward[e3], i.matching.reward[e4])
           reward = copy(i.matching.reward)
-          filter!(kv -> kv[2] < cutoff, reward)
-          filter!(kv -> _edge_any_end_match(kv[1], e1), reward)
-          filter!(kv -> _edge_any_end_match(kv[1], e2), reward)
-          filter!(kv -> _edge_any_end_match(kv[1], e3), reward)
-          filter!(kv -> _edge_any_end_match(kv[1], e4), reward)
+          filter!(kv -> kv[2] <= cutoff, reward)
+          filter!(kv -> ! _edge_any_end_match(kv[1], e1), reward)
+          filter!(kv -> ! _edge_any_end_match(kv[1], e2), reward)
+          filter!(kv -> ! _edge_any_end_match(kv[1], e3), reward)
+          filter!(kv -> ! _edge_any_end_match(kv[1], e4), reward)
           reward[e1] = reward[e2] = reward[e3] = reward[e4] = prevfloat(Inf)
+
+          if length(keys(reward)) == 4 # Nothing left? Skip.
+            continue
+          end
 
           graph = SimpleGraph(nv(i.matching.graph))
           for e in keys(reward)
