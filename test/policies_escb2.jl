@@ -13,9 +13,9 @@
         s = simulate(instance, ESCB2(ESCB2Exact()), n_rounds)
         @test s.round == n_rounds
         @test sum(values(s.arm_counts)) <= n_rounds * n
-        @test s.regret ≈ 3.2
-        @test s.reward ≈ 31.0
-        @test s.regret + s.reward ≈ 34.2
+        @test s.regret ≈ 3.8
+        @test s.reward ≈ 34.0
+        @test s.regret + s.reward ≈ 37.8
 
         for arm in keys(s.arm_counts)
           @test s.arm_average_reward[arm] ≈ s.arm_reward[arm] / s.arm_counts[arm]
@@ -29,7 +29,7 @@
         instance = UncorrelatedPerfectBipartiteMatching(reward, PerfectBipartiteMatchingLPSolver(Gurobi.Optimizer))
 
         n_rounds = 20
-        test_policy_trace(instance, ESCB2(ESCB2Exact()), n_rounds, n_rounds * n, 3.2, 31.0, 34.2)
+        test_policy_trace(instance, ESCB2(ESCB2Exact()), n_rounds, n_rounds * n, 3.8, 34.0)
       end
     end
   end
@@ -59,7 +59,7 @@
       instance = UncorrelatedPerfectBipartiteMatching(reward, PerfectBipartiteMatchingMunkresSolver())
 
       n_rounds = 20
-      test_policy_trace(instance, ESCB2(ESCB2Greedy()), n_rounds, n_rounds * n, 3.8, 30.0, 33.8)
+      test_policy_trace(instance, ESCB2(ESCB2Greedy()), n_rounds, n_rounds * n, 3.8, 30.0)
     end
   end
 
@@ -86,7 +86,7 @@
 
     @testset "Trace" begin
       n_rounds = 20
-      test_policy_trace(i, ESCB2(ESCB2Budgeted(.1, true)), n_rounds, n_rounds * m, 0.9, 25.0, 25.9)
+      test_policy_trace(i, ESCB2(ESCB2Budgeted(.1, true)), n_rounds, n_rounds * m, 0.9, 25.0)
     end
   end
 
@@ -113,7 +113,7 @@
 
     @testset "Trace" begin
       n_rounds = 20
-      test_policy_trace(i, ESCB2(ESCB2Budgeted(.1, false)), n_rounds, n_rounds * m, 0.9, 25.0, 25.9)
+      test_policy_trace(i, ESCB2(ESCB2Budgeted(.1, false)), n_rounds, n_rounds * m, 0.9, 25.0)
     end
   end
 

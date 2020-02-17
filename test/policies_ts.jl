@@ -26,6 +26,6 @@
     instance = UncorrelatedPerfectBipartiteMatching(reward, PerfectBipartiteMatchingMunkresSolver())
 
     n_rounds = 20
-    test_policy_trace(instance, ThompsonSampling(), n_rounds, n_rounds * n, 3.2, 39.0, 42.2)
+    test_policy_trace(instance, ThompsonSampling(), n_rounds, n_rounds * n, 3.2, 39.0)
   end
 end
