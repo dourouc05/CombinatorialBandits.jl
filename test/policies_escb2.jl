@@ -5,7 +5,7 @@
 
   if ! is_travis
     @testset "Exact" begin
-      instance = UncorrelatedPerfectBipartiteMatching(reward, PerfectBipartiteMatchingLPSolver(CPLEX.Optimizer))
+      instance = UncorrelatedPerfectBipartiteMatching(reward, PerfectBipartiteMatchingLPSolver(Gurobi.Optimizer))
 
       @testset "Algorithm" begin
         Random.seed!(1)
@@ -26,7 +26,7 @@
         n = 3
         ε = .1
         reward = Distribution[Bernoulli(.5 + ((i == j) ? ε : 0.)) for i in 1:n, j in 1:n]
-        instance = UncorrelatedPerfectBipartiteMatching(reward, PerfectBipartiteMatchingLPSolver(CPLEX.Optimizer))
+        instance = UncorrelatedPerfectBipartiteMatching(reward, PerfectBipartiteMatchingLPSolver(Gurobi.Optimizer))
 
         n_rounds = 20
         test_policy_trace(instance, ESCB2(ESCB2Exact()), n_rounds, n_rounds * n, 3.2, 31.0, 34.2)
