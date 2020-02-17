@@ -153,7 +153,7 @@
 
   if ! is_travis
     @testset "LP solver" begin
-      @testset "Constructor with $i nodes" for i in [5]#[2, 5, 10]
+      @testset "Constructor with $i nodes" for i in [2, 5, 10]
         n = i
         ε = 1 / (n + 1)
         reward = Dict{Tuple{Int64, Int64}, Distribution}(

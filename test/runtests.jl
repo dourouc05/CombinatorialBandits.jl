@@ -21,8 +21,7 @@ end
 
 function test_policy_trace(instance::CombinatorialInstance{T}, policy::Policy,
                            n_rounds::Int, total_arm_count::Int,
-                           final_regret::Float64, final_reward::Float64,
-                           expected_sum::Float64) where T
+                           final_regret::Float64, final_reward::Float64) where T
   Random.seed!(1)
   s, t = simulate(instance, policy, n_rounds, with_trace=true)
 
@@ -31,7 +30,7 @@ function test_policy_trace(instance::CombinatorialInstance{T}, policy::Policy,
   @test sum(values(s.arm_counts)) <= total_arm_count
   @test s.regret ≈ final_regret atol=1.e-9
   @test s.reward ≈ final_reward
-  @test s.regret + s.reward ≈ expected_sum
+  @test s.regret + s.reward ≈ final_regret + final_reward
 
   # Now, the trace.
   @test length(t.states) == n_rounds

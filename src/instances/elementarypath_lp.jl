@@ -18,6 +18,7 @@ function _elementary_path_lazy_callback(solver::ElementaryPathLPSolver, cb_data)
   # Based on the hypothesis that the strengthening constraints have been added beforehand!
   # I.e. at most one edge incoming and at most one outgoing (except for source/destination).
   x = Dict(e => callback_value(cb_data, solver.x[e]) for e in edges(solver.graph))
+  n_x_nonzero = 0
 
   # This callback is sometimes called for noninteger nodes! Just let the solver go on for these nodes.
   for e in edges(solver.graph)
@@ -25,6 +26,11 @@ function _elementary_path_lazy_callback(solver::ElementaryPathLPSolver, cb_data)
     if x[e] >= 0.01 && x[e] <= 0.99
       # The value for x[e] is clearly not integer.
       return
+    end
+
+    # Count nonzero values.
+    if x[e] >= 0.5
+      n_x_nonzero += 1
     end
   end
 
@@ -40,8 +46,13 @@ function _elementary_path_lazy_callback(solver::ElementaryPathLPSolver, cb_data)
       if x[e] >= .5
         x[e] = 0.0
         current_node = dst(e)
+        n_x_nonzero -= 1
         break
       end
+    end
+
+    if n_x_nonzero == 0
+      break
     end
   end
 
@@ -67,14 +78,18 @@ function _elementary_path_lazy_callback(solver::ElementaryPathLPSolver, cb_data)
   # as tight as possible.
   while length(lhs_edges) > 0
     # Find one subtour among these edges.
+    src_node = src(lhs_edges[1])
     con_edges = Edge[lhs_edges[1]]
     cur_node = dst(lhs_edges[1])
-    while cur_node != src(lhs_edges[1])
+    deleteat!(lhs_edges, 1)
+
+    while cur_node != src_node
       for (i, e) in enumerate(lhs_edges)
         if src(e) == cur_node
           cur_node = dst(e)
           push!(con_edges, e)
           deleteat!(lhs_edges, i)
+          break
         end
       end
     end
