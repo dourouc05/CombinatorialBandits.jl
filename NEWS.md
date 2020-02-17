@@ -41,4 +41,9 @@ for more details.
 
 ## 0.1.2
 
-Quite a bit of bug fixing, especially regarding matching algorithms. 
+Quite a bit of bug fixing, especially regarding matching algorithms.
+
+## 0.1.3
+
+Update to JuMP 0.21. Fix an infinite loop in LP-based formulation for
+elementary paths. 
