@@ -219,6 +219,7 @@ module CombinatorialBandits
   include("algos/ep_budgeted.jl")
   include("algos/matching.jl")
   include("algos/matching_budgeted.jl")
+  include("algos/matching_dp.jl")
   include("algos/msets.jl")
   include("algos/msets_budgeted.jl")
   include("algos/st.jl")

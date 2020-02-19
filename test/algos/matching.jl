@@ -74,13 +74,19 @@ using Test
     rewards = Dict(Edge(1, 4) => 1.0, Edge(1, 5) => 0.0, Edge(1, 6) => 0.0, Edge(2, 4) => 0.0, Edge(2, 5) => 1.0, Edge(2, 6) => 0.0, Edge(3, 4) => 0.0, Edge(3, 5) => 0.0, Edge(3, 6) => 1.0)
 
     i = BipartiteMatchingInstance(graph, rewards)
-    s = matching_hungarian(i)
-    @test s.instance == i
-    @test length(s.solution) == 3
-    @test Edge(1, 4) in s.solution
-    @test Edge(2, 5) in s.solution
-    @test Edge(3, 6) in s.solution
-    @test s.value ≈ 3.0
+
+    s1 = matching_hungarian(i)
+    s2 = matching_dp_imperfect(i)
+    s3 = matching_dp(i)
+
+    for s in [s1, s2, s3]
+      @test s.instance == i
+      @test length(s.solution) == 3
+      @test Edge(1, 4) in s.solution
+      @test Edge(2, 5) in s.solution
+      @test Edge(3, 6) in s.solution
+      @test s.value ≈ 3.0
+    end
   end
 
   @testset "Conformity: 5×5" begin
@@ -96,13 +102,19 @@ using Test
     end
 
     i = BipartiteMatchingInstance(graph, rewards)
-    s = matching_hungarian(i)
-    @test s.instance == i
-    @test length(s.solution) == n
-    for i in 1:n
-      @test Edge(i, i + n) in s.solution
+
+    s1 = matching_hungarian(i)
+    s2 = matching_dp_imperfect(i)
+    s3 = matching_dp(i)
+
+    for s in [s1, s2, s3]
+      @test s.instance == i
+      @test length(s.solution) == n
+      for i in 1:n
+        @test Edge(i, i + n) in s.solution
+      end
+      @test s.value ≈ n
     end
-    @test s.value ≈ n
 
     # Ensure one node has no matching in V1.
     graph = complete_bipartite_graph(n - 1, n)
@@ -115,10 +127,16 @@ using Test
     end
 
     i = BipartiteMatchingInstance(graph, rewards)
-    s = matching_hungarian(i)
-    @test s.instance == i
-    @test length(s.solution) == n - 1
-    @test s.value ≈ n - 1.0
+
+    s1 = matching_hungarian(i)
+    s2 = matching_dp_imperfect(i)
+    s3 = matching_dp(i)
+
+    for s in [s1, s2, s3]
+      @test s.instance == i
+      @test length(s.solution) == n - 1
+      @test s.value ≈ n - 1.0
+    end
 
     # Ensure one node has no matching in V2.
     graph = complete_bipartite_graph(n, n - 1)
@@ -131,10 +149,16 @@ using Test
     end
 
     i = BipartiteMatchingInstance(graph, rewards)
-    s = matching_hungarian(i)
-    @test s.instance == i
-    @test length(s.solution) == n - 1
-    @test s.value ≈ n - 1.0
+
+    s1 = matching_hungarian(i)
+    s2 = matching_dp_imperfect(i)
+    s3 = matching_dp(i)
+
+    for s in [s1, s2, s3]
+      @test s.instance == i
+      @test length(s.solution) == n - 1
+      @test s.value ≈ n - 1.0
+    end
   end
 end
 
@@ -187,10 +211,11 @@ end
       s1 = matching_hungarian_budgeted_lagrangian_search(i, ε)
       s2 = matching_hungarian_budgeted_lagrangian_refinement(i)
       s3 = matching_hungarian_budgeted_lagrangian_approx_half(i)
+      s4 = matching_dp_budgeted(i)
 
       @test s1.value ≈ 2.0 atol=ε # Lagrangian value.
 
-      for s in [s1, s2, s3]
+      for s in [s1, s2, s3, s4]
         @test s.instance == i
         @test length(s.solution) == 2
         @test Edge(1, 3) in s.solution
@@ -207,10 +232,11 @@ end
       s1 = matching_hungarian_budgeted_lagrangian_search(i, ε)
       s2 = matching_hungarian_budgeted_lagrangian_refinement(i)
       s3 = matching_hungarian_budgeted_lagrangian_approx_half(i)
+      s4 = matching_dp_budgeted(i)
 
       @test s1.value ≈ 1.0 atol=ε # Lagrangian value.
 
-      for s in [s1, s2, s3]
+      for s in [s1, s2, s3, s4]
         @test s.instance == i
         @test length(s.solution) == 2
         @test Edge(1, 4) in s.solution
@@ -227,10 +253,11 @@ end
       s1 = matching_hungarian_budgeted_lagrangian_search(i, ε)
       s2 = matching_hungarian_budgeted_lagrangian_refinement(i)
       s3 = matching_hungarian_budgeted_lagrangian_approx_half(i)
+      s4 = matching_dp_budgeted(i)
 
       @test s1.value ≈ 0.0 atol=ε # Lagrangian value.
 
-      for s in [s1, s2, s3]
+      for s in [s1, s2, s3, s4]
         @test s.instance == i
         @test length(s.solution) == 2
         @test Edge(1, 4) in s.solution
@@ -247,10 +274,11 @@ end
       s1 = matching_hungarian_budgeted_lagrangian_search(i, ε)
       s2 = matching_hungarian_budgeted_lagrangian_refinement(i)
       s3 = matching_hungarian_budgeted_lagrangian_approx_half(i)
+      s4 = matching_dp_budgeted(i)
 
       @test s1.value <= 0.0 # Lagrangian value.
 
-      for s in [s1, s2, s3]
+      for s in [s1, s2, s3, s4]
         @test s.instance == i
       end
 
@@ -258,8 +286,8 @@ end
       @test s1.instance == i
       @test length(s1.solution) == 2
 
-      # The other approximation algorithms return an infeasible solution.
-      for s in [s2, s3]
+      # The other approximation algorithms correctly return an infeasible solution.
+      for s in [s2, s3, s4]
         @test length(s.solution) == 0
         @test s.value == -Inf
       end
@@ -288,10 +316,11 @@ end
       s1 = matching_hungarian_budgeted_lagrangian_search(i, ε)
       s2 = matching_hungarian_budgeted_lagrangian_refinement(i)
       s3 = matching_hungarian_budgeted_lagrangian_approx_half(i)
+      s4 = matching_dp_budgeted(i)
 
       @test s1.value ≈ 3.0 atol=ε # Lagrangian value.
 
-      for s in [s1, s2, s3]
+      for s in [s1, s2, s3, s4]
         @test s.instance == i
         @test length(s.solution) == 3
         @test Edge(1, 4) in s.solution
@@ -309,10 +338,11 @@ end
       s1 = matching_hungarian_budgeted_lagrangian_search(i, ε)
       s2 = matching_hungarian_budgeted_lagrangian_refinement(i)
       s3 = matching_hungarian_budgeted_lagrangian_approx_half(i)
+      s4 = matching_dp_budgeted(i)
 
       @test s1.value ≈ 1.0 atol=ε # Lagrangian value.
 
-      for s in [s1, s2, s3]
+      for s in [s1, s2, s3, s4]
         @test s.instance == i
         @test length(s.solution) == 3
         @test ! (Edge(1, 4) in s.solution)
@@ -349,10 +379,11 @@ end
       s1 = matching_hungarian_budgeted_lagrangian_search(i, ε)
       s2 = matching_hungarian_budgeted_lagrangian_refinement(i)
       s3 = matching_hungarian_budgeted_lagrangian_approx_half(i)
+      s4 = matching_dp_budgeted(i)
 
       @test s1.value ≈ 5.0 atol=ε # Lagrangian value.
 
-      for s in [s1, s2, s3]
+      for s in [s1, s2, s3, s4]
         @test s.instance == i
         @test length(s.solution) == 5
 
@@ -372,8 +403,9 @@ end
       # Don't test Lagrangian relaxation now, constraint is not respected.
       s2 = matching_hungarian_budgeted_lagrangian_refinement(i)
       s3 = matching_hungarian_budgeted_lagrangian_approx_half(i)
+      s4 = matching_dp_budgeted(i)
 
-      for s in [s2, s3]
+      for s in [s2, s3, s4]
         @test s.instance == i
         @test length(s.solution) == 5
 
@@ -392,8 +424,9 @@ end
       # Don't test Lagrangian relaxation now, constraint is not respected.
       s2 = matching_hungarian_budgeted_lagrangian_refinement(i)
       s3 = matching_hungarian_budgeted_lagrangian_approx_half(i)
+      s4 = matching_dp_budgeted(i)
 
-      for s in [s2, s3]
+      for s in [s2, s3, s4]
         @test s.instance == i
         @test length(s.solution) == 5
 
@@ -413,8 +446,9 @@ end
       # Don't test Lagrangian relaxation now, constraint is not respected.
       s2 = matching_hungarian_budgeted_lagrangian_refinement(i)
       s3 = matching_hungarian_budgeted_lagrangian_approx_half(i)
+      s4 = matching_dp_budgeted(i)
 
-      for s in [s2, s3]
+      for s in [s2, s3, s4]
         @test s.instance == i
         @test length(s.solution) == 0
       end

@@ -36,4 +36,24 @@ function solve_budgeted_linear(solver::PerfectBipartiteMatchingAlgosSolver,
   return [(src(e), dst(e) - solver.n_arms) for e in s]
 end
 
+function solve_all_budgeted_linear(solver::PerfectBipartiteMatchingAlgosSolver,
+                                   rewards::Dict{Tuple{Int, Int}, Float64},
+                                   weights::Dict{Tuple{Int, Int}, Int},
+                                   max_budget::Int)
+  g = complete_bipartite_graph(solver.n_arms, solver.n_arms)
+  r = Dict{Edge{Int}, Float64}(Edge(k[1], solver.n_arms + k[2]) => v for (k, v) in rewards)
+  w = Dict{Edge{Int}, Int}(Edge(k[1], solver.n_arms + k[2]) => v for (k, v) in weights)
+  i = BudgetedBipartiteMatchingInstance(g, r, w, max_budget)
+
+  s = matching_dp_budgeted(i).solution
+
+  sol = Dict{Int, Vector{Edge{Int}}}()
+  vl = last(instance.matching.vertex_left)
+  vr = last(instance.matching.vertex_right)
+  for budget in 0:max_budget
+    sol[budget] = s.solutions[vl, vr, 0, budget]
+  end
+  return sol
+end
+
 has_lp_formulation(::PerfectBipartiteMatchingAlgosSolver) = false
