@@ -22,14 +22,15 @@ Example usage:
 using CombinatorialBandits, Distributions
 
 n = 20
+m = 8
 ε = 0.1
 distr = Distribution[Bernoulli(.5 + ((i % 3 == 0) ? ε : -ε)) for i in 1:n]
 
-i = UncorrelatedPerfectBipartiteMatching(distr, MSetAlgosSolver())
+i = MSet(distr, 8, MSetAlgosSolver())
 @time simulate(i, ThompsonSampling(), 200)
 @time simulate(i, LLR(), 200)
 @time simulate(i, CUCB(), 200)
-@time simulate(i, ESCB2(.1, ESCB2Budgeted(.1, true)), 200)
+@time simulate(i, ESCB2(ESCB2Budgeted(.1, true)), 200)
 ```
 
 ## Citing
