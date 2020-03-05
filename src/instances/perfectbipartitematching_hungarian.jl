@@ -18,7 +18,7 @@ function solve_linear(solver::PerfectBipartiteMatchingHungarianSolver, rewards::
   end
   solver.weights_matrix = maximum(solver.weights_matrix) .- solver.weights_matrix
 
-  matching = Hungarian.munkres!(solver.weights_matrix)
+  matching = Hungarian.munkres(solver.weights_matrix)
   indices = CartesianIndices(matching)
   return [(indices[v][1], indices[v][2]) for v in findall(matching .== Hungarian.STAR)]
 end
