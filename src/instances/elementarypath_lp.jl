@@ -15,8 +15,14 @@ mutable struct ElementaryPathLPSolver <: ElementaryPathSolver
 end
 
 has_lp_formulation(::ElementaryPathLPSolver) = true
+approximation_ratio(::ElementaryPathLPSolver) = 1.0
+approximation_term(::ElementaryPathLPSolver) = 0.0
+approximation_ratio_budgeted(::ElementaryPathLPSolver) = 1.0
+approximation_term_budgeted(::ElementaryPathLPSolver) = 0.0
 supports_solve_budgeted_linear(::ElementaryPathLPSolver) = true
 supports_solve_all_budgeted_linear(::ElementaryPathLPSolver) = false
+
+Base.copy(solver::ElementaryPathLPSolver) = ElementaryPathLPSolver(solver.solver)
 
 function _elementary_path_lazy_callback(solver::ElementaryPathLPSolver, cb_data)
   # Based on the hypothesis that the strengthening constraints have been added beforehand!
@@ -104,42 +110,6 @@ function _elementary_path_lazy_callback(solver::ElementaryPathLPSolver, cb_data)
   end
 end
 
-function _sort_path(path::Vector{Tuple{Int, Int}}, source::Int, destination::Int, n_vertices::Int)
-  sorted = Tuple{Int, Int}[]
-  current_node = source
-  edges = copy(path)
-
-  i = 0
-  while length(edges) > 0
-    # Find the corresponding edge (or the first one that matches).
-    for i in 1:length(edges)
-      e = edges[i]
-      if e[1] == current_node
-        push!(sorted, e)
-        current_node = e[2]
-        deleteat!(edges, i)
-        break
-      end
-    end
-
-    if current_node == destination
-      break
-    end
-
-    # Safety: ensure this loop does not make too many iterations.
-    i += 1
-    if i > n_vertices
-      error("Assertion failed: infinite loop when sorting the edges of the path $path")
-    end
-  end
-
-  if length(edges) > 0
-    error("Edges remaining after sorting the edges: the solution is likely to contain at least a subtour, $edges")
-  end
-
-  return sorted
-end
-
 function build!(solver::ElementaryPathLPSolver, graph::SimpleDiGraph, source::Int, destination::Int)
   n = nv(graph)
   solver.graph = graph
@@ -202,4 +172,81 @@ function get_lp_formulation(solver::ElementaryPathLPSolver, reward::Dict{Tuple{I
   return solver.model,
     sum(reward[(i, j)] * solver.x[Edge(i, j)] for (i, j) in keys(reward)),
     Dict{Tuple{Int, Int}, JuMP.VariableRef}((i, j) => solver.x[Edge(i, j)] for (i, j) in keys(reward))
+end
+
+function _sort_path(path::Vector{Tuple{Int, Int}}, source::Int, destination::Int, n_vertices::Int)
+  sorted = Tuple{Int, Int}[]
+  current_node = source
+  edges = copy(path)
+
+  i = 0
+  while length(edges) > 0
+    # Find the corresponding edge (or the first one that matches).
+    for i in 1:length(edges)
+      e = edges[i]
+      if e[1] == current_node
+        push!(sorted, e)
+        current_node = e[2]
+        deleteat!(edges, i)
+        break
+      end
+    end
+
+    if current_node == destination
+      break
+    end
+
+    # Safety: ensure this loop does not make too many iterations.
+    i += 1
+    if i > n_vertices
+      error("Assertion failed: infinite loop when sorting the edges of the path $path")
+    end
+  end
+
+  if length(edges) > 0
+    error("Edges remaining after sorting the edges: the solution is likely to contain at least a subtour, $edges")
+  end
+
+  return sorted
+end
+
+function solve_linear(solver::ElementaryPathLPSolver, reward::Dict{Tuple{Int, Int}, Float64})
+  m, obj, vars = get_lp_formulation(solver, reward)
+  @objective(m, Max, obj)
+
+  set_silent(m)
+  optimize!(m)
+
+  if termination_status(m) != MOI.OPTIMAL
+    return Tuple{Int, Int}[]
+  end
+  sol = Tuple{Int, Int}[(i, j) for (i, j) in keys(reward) if value(vars[i, j]) > 0.5]
+  return _sort_path(sol, solver.source, solver.destination, nv(solver.graph))
+end
+
+function solve_budgeted_linear(solver::ElementaryPathLPSolver,
+                               reward::Dict{Tuple{Int, Int}, Float64},
+                               weight::Dict{Tuple{Int, Int}, T},
+                               budget::Int) where {T<:Number} # Handle both Int and Float64
+  m, obj, vars = get_lp_formulation(solver, reward)
+  @objective(m, Max, obj)
+
+  # Add the budget constraint (or change the existing constraint).
+  if :ElementaryPathLP in keys(m.ext)
+    budget_constraint = m.ext[:ElementaryPathLP][:budget_constraint]
+    set_normalized_rhs(budget_constraint, budget)
+  else
+    budget_constraint = @constraint(m, sum(weight[i] * vars[i] for i in keys(reward)) >= budget)
+    m.ext[:ElementaryPathLP] = Dict(:budget_constraint => budget_constraint)
+  end
+
+  set_silent(m)
+  optimize!(m)
+
+  if termination_status(m) != MOI.OPTIMAL
+    return Tuple{Int, Int}[]
+  end
+
+  sol = Tuple{Int, Int}[(i, j) for (i, j) in keys(reward) if value(vars[i, j]) > 0.5]
+  return _sort_path(sol, solver.source, solver.destination, nv(solver.graph))
 end

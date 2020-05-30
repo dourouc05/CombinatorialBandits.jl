@@ -21,7 +21,7 @@ struct SpanningTree <: CombinatorialInstance{Tuple{Int, Int}}
   # Internal solver.
   solver::SpanningTreeSolver
 
-  function SpanningTree(graph::SimpleGraph, reward::Dict{Tuple{Int, Int}, Distribution}, solver::SpanningTreeSolver)
+  function SpanningTree(graph::SimpleGraph, reward::Dict{Tuple{Int, Int}, <:Distribution}, solver::SpanningTreeSolver)
     if length(reward) != ne(graph)
       error("The edges and rewards do not perfectly match: there are $(length(reward)) rewards and $(ne(graph)) edges.")
     end
@@ -43,11 +43,7 @@ struct SpanningTree <: CombinatorialInstance{Tuple{Int, Int}}
   end
 end
 
-function initial_state(instance::SpanningTree)
-  zero_counts = Dict(k => 0 for (k, _) in instance.reward)
-  zero_rewards = Dict(k => 0.0 for (k, _) in instance.reward)
-  return State{Tuple{Int, Int}}(0, 0.0, 0.0, zero_counts, zero_rewards, copy(zero_rewards))
-end
+Base.copy(instance::SpanningTree) = SpanningTree(instance.graph, instance.reward, copy(instance.solver))
 
 solve_linear(instance::SpanningTree, rewards::Dict{Tuple{Int, Int}, Float64}) = solve_linear(instance.solver, rewards)
 has_lp_formulation(instance::SpanningTree) = has_lp_formulation(instance.solver)

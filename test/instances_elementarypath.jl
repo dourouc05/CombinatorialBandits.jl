@@ -273,8 +273,8 @@
         @testset "Overall solution" begin
           i_lp = ElementaryPath(graph, distr, s, d, ElementaryPathLPSolver(Gurobi.Optimizer))
           i_al = ElementaryPath(graph, distr, s, d, ElementaryPathAlgosSolver())
-          s_lp = CombinatorialBandits.optimise_linear_sqrtlinear(i_lp, ESCB2Exact(), rewards, weights)
-          s_al = CombinatorialBandits.optimise_linear_sqrtlinear(i_al, ESCB2Budgeted(ε, true), rewards, weights)
+          s_lp = optimise_linear_sqrtlinear(i_lp, ESCB2Exact(), rewards, weights, 1.0, 1)
+          s_al = optimise_linear_sqrtlinear(i_al, ESCB2Budgeted(ε, true), rewards, weights, 1.0, 1)
           o_lp = sum(rewards[arm] for arm in s_lp) + sqrt(sum(weights[arm] for arm in s_lp))
           o_al = sum(rewards[arm] for arm in s_al) + sqrt(sum(weights[arm] for arm in s_al))
 

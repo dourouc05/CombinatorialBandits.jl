@@ -10,9 +10,9 @@
     s = simulate(instance, ThompsonSampling(), n_rounds)
     @test s.round == n_rounds
     @test sum(values(s.arm_counts)) == n_rounds * n
-    @test s.regret ≈ 3.2
-    @test s.reward ≈ 39.0
-    @test s.regret + s.reward ≈ 42.2
+    @test s.regret ≈ 3.1
+    @test s.reward ≈ 26.0
+    @test s.regret + s.reward ≈ 29.1
 
     for arm in keys(s.arm_counts)
       @test s.arm_average_reward[arm] ≈ s.arm_reward[arm] / s.arm_counts[arm]
@@ -26,6 +26,6 @@
     instance = UncorrelatedPerfectBipartiteMatching(reward, PerfectBipartiteMatchingMunkresSolver())
 
     n_rounds = 20
-    test_policy_trace(instance, ThompsonSampling(), n_rounds, n_rounds * n, 3.2, 39.0)
+    test_policy_trace(instance, ThompsonSampling(), n_rounds, n_rounds * n, 3.1, 26.0)
   end
 end

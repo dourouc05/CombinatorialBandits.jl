@@ -1,3 +1,5 @@
+_generic_lp_key(solver) = Symbol(string(typeof(solver)))
+
 function solve_linear(solver, reward::Dict{Tuple{Int, Int}, Float64})
   # Generic implementation that should work for all solvers following the same conventions:
   #  - `has_lp_formulation` returns `true` for the solver
@@ -7,12 +9,11 @@ function solve_linear(solver, reward::Dict{Tuple{Int, Int}, Float64})
   @assert has_lp_formulation(solver)
   @assert supports_solve_budgeted_linear(solver)
 
-  key = Symbol(string(typeof(solver)))
-
   m, obj, vars = get_lp_formulation(solver, reward)
   @objective(m, Max, obj)
 
   # Maybe solve_budgeted_linear has already been called on this model.
+  key = _generic_lp_key(solver)
   if key in keys(m.ext)
     budget_constraint = m.ext[key][:budget_constraint]
     set_normalized_rhs(budget_constraint, 0)
@@ -41,12 +42,11 @@ function solve_budgeted_linear(solver,
   @assert has_lp_formulation(solver)
   @assert supports_solve_budgeted_linear(solver)
 
-  key = Symbol(string(typeof(solver)))
-
   m, obj, vars = get_lp_formulation(solver, reward)
   @objective(m, Max, obj)
 
   # Add the budget constraint (or change the existing constraint).
+  key = _generic_lp_key(solver)
   if key in keys(m.ext)
     budget_constraint = m.ext[key][:budget_constraint]
     set_normalized_rhs(budget_constraint, budget)

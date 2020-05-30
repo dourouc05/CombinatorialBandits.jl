@@ -1,5 +1,5 @@
 abstract type MSetSolver end
-function build!(solver::MSetSolver, reward::Matrix{Distribution})
+function build!(::MSetSolver, ::Matrix{Distribution})
   nothing
 end
 
@@ -30,6 +30,9 @@ struct MSet <: CombinatorialInstance{Int}
     return new(length(reward), opt, m, reward, solver)
   end
 end
+
+copy(instance::MSet) =
+  MSet(instance.reward, instance.m, copy(instance.solver))
 
 function is_feasible(instance::MSet, arms::Vector{Int})
   if length(arms) > instance.m

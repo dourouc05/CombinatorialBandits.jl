@@ -24,7 +24,7 @@ struct ElementaryPath <: CombinatorialInstance{Tuple{Int, Int}}
   # Internal solver.
   solver::ElementaryPathSolver
 
-  function ElementaryPath(graph::SimpleDiGraph, reward::Dict{Tuple{Int, Int}, Distribution}, source::Int, destination::Int, solver::ElementaryPathSolver)
+  function ElementaryPath(graph::SimpleDiGraph, reward::Dict{Tuple{Int, Int}, <:Distribution}, source::Int, destination::Int, solver::ElementaryPathSolver)
     n = nv(graph)
 
     if source <= 0
@@ -66,11 +66,7 @@ struct ElementaryPath <: CombinatorialInstance{Tuple{Int, Int}}
   end
 end
 
-function initial_state(instance::ElementaryPath) # TODO: share a lot of code among graph instances?
-  zero_counts = Dict(k => 0 for (k, _) in instance.reward)
-  zero_rewards = Dict(k => 0.0 for (k, _) in instance.reward)
-  return State{Tuple{Int, Int}}(0, 0.0, 0.0, zero_counts, zero_rewards, copy(zero_rewards))
-end
+Base.copy(instance::ElementaryPath) = ElementaryPath(instance.graph, instance.reward, instance.source, instance.destination, copy(instance.solver))
 
 function is_feasible(instance::ElementaryPath, arms::Vector{Tuple{Int, Int}})
   # Many checks are similar for just a partially acceptable path.

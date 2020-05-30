@@ -1,7 +1,8 @@
 struct ESCB2Greedy <: ESCB2OptimisationAlgorithm end
 
 function optimise_linear_sqrtlinear(instance::CombinatorialInstance{T}, ::ESCB2Greedy,
-                                    linear::Dict{T, Float64}, sqrtlinear::Dict{T, Float64}, ::Int;
+                                    linear::Dict{T, Float64}, sqrtlinear::Dict{T, Float64},
+                                    sqrtlinear_weight::Float64, ::Int;
                                     with_trace::Bool=false) where T
   # TODO: factor this out to the combinatorial algorithm package? This is very generic, in principle (get rid of linear and sqrtlinear parts, replace by a custom evaluation function).
   directions = Set(keys(linear))
@@ -24,7 +25,7 @@ function optimise_linear_sqrtlinear(instance::CombinatorialInstance{T}, ::ESCB2G
       end
 
       # If this solution is better, keep it.
-      reward = escb2_index(linear, sqrtlinear, new_sol)
+      reward = escb2_index(linear, sqrtlinear, sqrtlinear_weight, new_sol)
       if reward > best_reward
         best_reward = reward
         best_direction = d
@@ -32,7 +33,7 @@ function optimise_linear_sqrtlinear(instance::CombinatorialInstance{T}, ::ESCB2G
     end
 
     # If no direction could be found, done!
-    if best_direction == nothing
+    if best_direction === nothing
       break
     end
 
@@ -56,7 +57,7 @@ function optimise_linear_sqrtlinear(instance::CombinatorialInstance{T}, ::ESCB2G
   if with_trace
     run_details = ESCB2Details()
     run_details.n_iterations = n_iter
-    run_details.best_objective = escb2_index(linear, sqrtlinear, sol)
+    run_details.best_objective = escb2_index(linear, sqrtlinear, sqrtlinear_weight, sol)
     run_details.solver_time = (t1 - t0) / 1_000_000_000
     return sol, run_details
   else

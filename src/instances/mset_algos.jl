@@ -3,9 +3,11 @@ mutable struct MSetAlgosSolver <: MSetSolver
   n_arms # Int
 
   function MSetAlgosSolver()
-    return new(nothing)
+    return new(nothing, nothing)
   end
 end
+
+copy(::MSetAlgosSolver) = MSetAlgosSolver()
 
 function build!(solver::MSetAlgosSolver, m::Int, n_arms::Int)
   solver.m = m
@@ -13,6 +15,10 @@ function build!(solver::MSetAlgosSolver, m::Int, n_arms::Int)
 end
 
 has_lp_formulation(::MSetAlgosSolver) = false
+approximation_ratio(::MSetAlgosSolver) = 1.0
+approximation_term(::MSetAlgosSolver) = 0.0
+approximation_ratio_budgeted(::MSetAlgosSolver) = 1.0 # TODO: redirect to the package.
+approximation_term_budgeted(::MSetAlgosSolver) = 0.0
 supports_solve_budgeted_linear(::MSetAlgosSolver) = true
 supports_solve_all_budgeted_linear(::MSetAlgosSolver) = true
 

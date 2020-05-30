@@ -1,22 +1,18 @@
-struct BudgetedSpanningTreeInstance{T, U}
-  graph::AbstractGraph{T}
-  rewards::Dict{Edge{T}, Float64}
-  weights::Dict{Edge{T}, U}
-  budget::U
-end
+solve(i::BudgetedSpanningTreeInstance{T}, ::LagrangianAlgorithm, ε; kwargs...) where T = st_prim_budgeted_lagrangian_search(i, ε; kwargs...)
+solve(i::BudgetedSpanningTreeInstance{T}, ::LagrangianRefinementAlgorithm; kwargs...) where T = st_prim_budgeted_lagrangian_refinement(i; kwargs...)
+solve(i::BudgetedSpanningTreeInstance{T}, ::IteratedLagrangianRefinementAlgorithm; kwargs...) where T = st_prim_budgeted_lagrangian_approx_half(i; kwargs...)
 
-function _budgeted_spanning_tree_compute_value(i::Union{SpanningTreeInstance{T}, BudgetedSpanningTreeInstance{T, U}}, tree::Vector{Edge{T}}) where {T, U}
-  return sum(i.rewards[(e in keys(i.rewards)) ? e : reverse(e)] for e in tree)
-end
+approximation_term(::BudgetedSpanningTreeInstance{T}, ::LagrangianAlgorithm) where T = NaN
+approximation_ratio(::BudgetedSpanningTreeInstance{T}, ::LagrangianAlgorithm) where T = NaN
+
+approximation_term(i::BudgetedSpanningTreeInstance{T}, ::LagrangianRefinementAlgorithm) where T = maximum(values(i.rewards))
+approximation_ratio(::BudgetedSpanningTreeInstance{T}, ::LagrangianRefinementAlgorithm) where T = NaN
+
+approximation_term(::BudgetedSpanningTreeInstance{T}, ::IteratedLagrangianRefinementAlgorithm) where T = NaN
+approximation_ratio(::BudgetedSpanningTreeInstance{T}, ::IteratedLagrangianRefinementAlgorithm) where T = 0.5
 
 function _budgeted_spanning_tree_compute_weight(i::BudgetedSpanningTreeInstance{T, U}, tree::Vector{Edge{T}}) where {T, U}
   return sum(i.weights[(e in keys(i.weights)) ? e : reverse(e)] for e in tree)
-end
-
-abstract type BudgetedSpanningTreeSolution{T, U}
-  # instance::BudgetedSpanningTreeInstance{T, U}
-  # tree::Vector{Edge{T}}
-  # value::Float64 # TODO: remove me, only useful for Lagrangian.
 end
 
 struct BudgetedSpanningTreeLagrangianSolution{T, U} <: BudgetedSpanningTreeSolution{T, U}
@@ -26,25 +22,6 @@ struct BudgetedSpanningTreeLagrangianSolution{T, U} <: BudgetedSpanningTreeSolut
   λ::Float64 # Optimum dual multiplier.
   value::Float64 # Optimum value of the dual problem (i.e. with penalised constraint).
   λmax::Float64 # No dual value higher than this is useful (i.e. they all yield the same solution).
-end
-
-struct SimpleBudgetedSpanningTreeSolution{T, U} <: BudgetedSpanningTreeSolution{T, U}
-  instance::BudgetedSpanningTreeInstance{T, U}
-  tree::Vector{Edge{T}}
-  value::Float64
-
-  function SimpleBudgetedSpanningTreeSolution(instance::BudgetedSpanningTreeInstance{T, U}, tree::Vector{Edge{T}}) where {T, U}
-    if length(tree) > 0
-      return new{T, U}(instance, tree, _budgeted_spanning_tree_compute_value(instance, tree))
-    else
-      return new{T, U}(instance, tree, -Inf)
-    end
-  end
-
-  function SimpleBudgetedSpanningTreeSolution(instance::BudgetedSpanningTreeInstance{T, U}) where {T, U}
-    # No feasible solution.
-    return new{T, U}(instance, edgetype(instance.graph)[], -Inf)
-  end
 end
 
 function st_prim_budgeted_lagrangian(i::BudgetedSpanningTreeInstance{T, U}, λ::Float64) where {T, U}
@@ -300,14 +277,14 @@ function st_prim_budgeted_lagrangian_approx_half(i::BudgetedSpanningTreeInstance
       end
 
       # Only keep the best solution.
-      if best_sol == nothing || sol.value > best_sol.value
+      if best_sol === nothing || sol.value > best_sol.value
         # sol's instance is the one used internally for the subproblems.
         best_sol = SimpleBudgetedSpanningTreeSolution(i, sol.tree)
       end
     end
   end
 
-  if best_sol != nothing
+  if best_sol !== nothing
     return best_sol
   else
     return SimpleBudgetedSpanningTreeSolution(i)

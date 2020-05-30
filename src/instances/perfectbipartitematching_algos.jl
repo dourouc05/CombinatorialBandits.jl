@@ -7,7 +7,6 @@ mutable struct PerfectBipartiteMatchingAlgosSolver <: PerfectBipartiteMatchingSo
   end
 end
 
-has_lp_formulation(::PerfectBipartiteMatchingAlgosSolver) = false
 supports_solve_budgeted_linear(::PerfectBipartiteMatchingAlgosSolver) = true
 supports_solve_all_budgeted_linear(::PerfectBipartiteMatchingAlgosSolver) = true
 
@@ -59,3 +58,9 @@ function solve_all_budgeted_linear(solver::PerfectBipartiteMatchingAlgosSolver,
   end
   return sol
 end
+
+has_lp_formulation(::PerfectBipartiteMatchingAlgosSolver) = false
+approximation_ratio(::PerfectBipartiteMatchingAlgosSolver) = 1.0
+approximation_term(::PerfectBipartiteMatchingAlgosSolver) = 0.0
+approximation_ratio_budgeted(::PerfectBipartiteMatchingAlgosSolver) = 0.5
+approximation_term_budgeted(::PerfectBipartiteMatchingAlgosSolver) = 0.0

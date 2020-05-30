@@ -3,16 +3,9 @@
 ## Components shared by both correlated and uncorrelated arms.
 
 abstract type PerfectBipartiteMatchingSolver end
-function build!(solver::PerfectBipartiteMatchingSolver, n_arms::Int) end
+function build!(::PerfectBipartiteMatchingSolver, ::Int) end
 
 abstract type PerfectBipartiteMatching <: CombinatorialInstance{Tuple{Int, Int}} end
-
-function initial_state(instance::PerfectBipartiteMatching)
-  n = round(Int, sqrt(instance.n_arms))
-  zero_counts = Dict((i, j) => 0 for i in 1:n, j in 1:n)
-  zero_rewards = Dict((i, j) => 0.0 for i in 1:n, j in 1:n)
-  return State{Tuple{Int, Int}}(0, 0.0, 0.0, zero_counts, zero_rewards, copy(zero_rewards))
-end
 
 function is_feasible(instance::PerfectBipartiteMatching, arms::Vector{Tuple{Int, Int}})
   if length(arms) > instance.n_arms
@@ -61,6 +54,8 @@ struct UncorrelatedPerfectBipartiteMatching <: PerfectBipartiteMatching
   end
 end
 
+Base.copy(instance::UncorrelatedPerfectBipartiteMatching) = UncorrelatedPerfectBipartiteMatching(instance.reward, copy(instance.solver))
+
 ## Correlated arms.
 
 struct CorrelatedPerfectBipartiteMatching <: PerfectBipartiteMatching
@@ -102,3 +97,5 @@ struct CorrelatedPerfectBipartiteMatching <: PerfectBipartiteMatching
     return new(n, opt, all_arm_indices, reward, solver)
   end
 end
+
+Base.copy(instance::CorrelatedPerfectBipartiteMatching) = CorrelatedPerfectBipartiteMatching(instance.reward, copy(instance.solver))

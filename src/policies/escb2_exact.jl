@@ -2,8 +2,10 @@
 struct ESCB2Exact <: ESCB2OptimisationAlgorithm; end
 
 function optimise_linear_sqrtlinear(instance::CombinatorialInstance{T}, ::ESCB2Exact,
-                                    linear::Dict{T, Float64}, sqrtlinear::Dict{T, Float64}, ::Int;
+                                    linear::Dict{T, Float64}, sqrtlinear::Dict{T, Float64},
+                                    sqrtlinear_weight::Float64, ::Int;
                                     with_trace::Bool=false) where T
+  # Get a LP formulation
   if ! has_lp_formulation(instance)
     error("The exact formulation for ESCB-2 relies on a LP formulation, which the solver associated to this instance cannot provide.")
   end
@@ -13,7 +15,7 @@ function optimise_linear_sqrtlinear(instance::CombinatorialInstance{T}, ::ESCB2E
   # Encode the square root as a geometric mean, i.e. a SOCP.
   #     t = sqrt(b^T x) = geomean(b^T x, 1)
   #     (2 t)² + (1 - b^T x)² <= (1 + b^T x)²
-  #     (1 + b^T x, 2 * t, 1 - b^T x, 2 * t) in SOCP, following JuMP's conventions
+  #     (1 + b^T x, 1 - b^T x, 2 * t) in SOCP, following JuMP's conventions
   # Add this reformulation only once in the model to avoid JuMP complaining.
   if :CombinatorialESCB2 in keys(m.ext)
     dict = m.ext[:CombinatorialESCB2]
@@ -31,7 +33,7 @@ function optimise_linear_sqrtlinear(instance::CombinatorialInstance{T}, ::ESCB2E
     @variable(m, confidence_bonus_linear >= 0) # b^T x
     @variable(m, confidence_bonus >= 0) # t
 
-    @constraint(m, eq, confidence_bonus_linear == sum(sqrtlinear[i] * vars[i] for i in keys(sqrtlinear)))
+    @constraint(m, eq, confidence_bonus_linear == sqrtlinear_weight * sum(sqrtlinear[i] * vars[i] for i in keys(sqrtlinear)))
     @constraint(m, cone, [1 + confidence_bonus_linear, 1 - confidence_bonus_linear, 2 * confidence_bonus] in SecondOrderCone())
 
     m.ext[:CombinatorialESCB2] = Dict(:confidence_bonus_linear => confidence_bonus_linear, :confidence_bonus => confidence_bonus, :eq => eq, :cone => cone)

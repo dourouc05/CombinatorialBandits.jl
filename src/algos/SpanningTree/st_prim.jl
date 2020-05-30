@@ -1,24 +1,4 @@
-using LightGraphs
-using DataStructures
-
-struct SpanningTreeInstance{T}
-  graph::AbstractGraph{T}
-  rewards::Dict{Edge{T}, Float64}
-end
-
-graph(i::SpanningTreeInstance{T}) where T = i.graph
-# rewards(i::SpanningTreeInstance{T}) where T = i.rewards
-function reward(i::SpanningTreeInstance{T}, e::Edge{T}) where T
-  if e in keys(i.rewards)
-    return i.rewards[e]
-  end
-  return i.rewards[reverse(e)]
-end
-
-struct SpanningTreeSolution{T}
-  instance::SpanningTreeInstance{T}
-  tree::Vector{Edge{T}}
-end
+solve(i::SpanningTreeInstance{T}, ::PrimAlgorithm; kwargs...) where T = st_prim(i; kwargs...)
 
 function st_prim(i::SpanningTreeInstance{T}) where T
   remaining_edges = PriorityQueue{Edge{T}, Float64}(Base.Reverse) # Easy retrieval of highest-reward edge.

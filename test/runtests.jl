@@ -85,13 +85,10 @@ solve_linear(::SpanningTreeNoSolver, ::Dict{Tuple{Int64, Int64}, Float64}) = Tup
     include("policies_llr.jl")
     include("policies_cucb.jl")
     include("policies_escb2.jl")
-  end
 
-  @testset "Combinatorial algorithms" begin
-    include("algos/ep.jl")
-    include("algos/matching.jl")
-    include("algos/msets.jl")
-    include("algos/st.jl")
+    if ! is_travis
+      include("policies_graves_lai.jl")
+    end
   end
 
   include("main.jl")

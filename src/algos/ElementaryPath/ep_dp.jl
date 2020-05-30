@@ -1,27 +1,4 @@
-using LightGraphs
-
-import LightGraphs: src, dst
-
-struct ElementaryPathInstance{T}
-  graph::AbstractGraph{T}
-  costs::Dict{Edge{T}, Float64}
-  src::T
-  dst::T
-end
-
-graph(i::ElementaryPathInstance{T}) where T = i.graph
-src(i::ElementaryPathInstance{T}) where T = i.src
-dst(i::ElementaryPathInstance{T}) where T = i.dst
-
-# dimension(i::ElementaryPathInstance{T}) where T = ne(graph(i))
-cost(i::ElementaryPathInstance{T}, u::T, v::T) where T = i.costs[Edge(u, v)]
-
-struct ElementaryPathSolution{T}
-  instance::ElementaryPathInstance{T}
-  path::Vector{Edge{T}}
-  states::Dict{T, Float64}
-  solutions::Dict{T, Vector{Edge{T}}}
-end
+solve(i::ElementaryPathInstance{T}, ::BellmanFordAlgorithm; kwargs...) where T = lp_dp(i; kwargs...)
 
 function lp_dp(i::ElementaryPathInstance{T}) where T # I.e. Bellman-Ford algorithm. Assumption: no positive-cost cycle in the graph.
   V = Dict{T, Float64}()

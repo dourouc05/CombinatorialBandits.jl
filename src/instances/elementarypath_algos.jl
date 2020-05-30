@@ -9,6 +9,10 @@ mutable struct ElementaryPathAlgosSolver <: ElementaryPathSolver
 end
 
 has_lp_formulation(::ElementaryPathAlgosSolver) = false
+approximation_ratio(::ElementaryPathAlgosSolver) = 1.0
+approximation_term(::ElementaryPathAlgosSolver) = 0.0
+approximation_ratio_budgeted(::ElementaryPathAlgosSolver) = 1.0
+approximation_term_budgeted(::ElementaryPathAlgosSolver) = 0.0
 supports_solve_budgeted_linear(::ElementaryPathAlgosSolver) = true
 supports_solve_all_budgeted_linear(::ElementaryPathAlgosSolver) = true
 

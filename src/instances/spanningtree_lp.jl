@@ -17,8 +17,14 @@ mutable struct SpanningTreeLPSolver <: SpanningTreeSolver
 end
 
 has_lp_formulation(::SpanningTreeLPSolver) = true
-supports_solve_budgeted_linear(::SpanningTreeLPSolver) = false
+approximation_ratio(::SpanningTreeLPSolver) = 1.0
+approximation_term(::SpanningTreeLPSolver) = 0.0
+approximation_ratio_budgeted(::SpanningTreeLPSolver) = 1.0
+approximation_term_budgeted(::SpanningTreeLPSolver) = 0.0
+supports_solve_budgeted_linear(::SpanningTreeLPSolver) = true
 supports_solve_all_budgeted_linear(::SpanningTreeLPSolver) = false
+
+Base.copy(solver::SpanningTreeLPSolver) = SpanningTreeLPSolver(solver.solver)
 
 function build!(solver::SpanningTreeLPSolver, graph::SimpleGraph)
   # Input graph supposed to be undirected.

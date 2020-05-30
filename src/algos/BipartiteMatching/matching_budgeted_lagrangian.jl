@@ -1,31 +1,15 @@
-struct BudgetedBipartiteMatchingInstance{T, U}
-  matching::BipartiteMatchingInstance{T}
-  weight::Dict{Edge{T}, U}
-  budget::U
+solve(i::BudgetedBipartiteMatchingInstance{T}, ::LagrangianAlgorithm, ε; kwargs...) where T = matching_hungarian_budgeted_lagrangian_search(i, ε; kwargs...)
+solve(i::BudgetedBipartiteMatchingInstance{T}, ::LagrangianRefinementAlgorithm; kwargs...) where T = matching_hungarian_budgeted_lagrangian_refinement(i; kwargs...)
+solve(i::BudgetedBipartiteMatchingInstance{T}, ::IteratedLagrangianRefinementAlgorithm; kwargs...) where T = matching_hungarian_budgeted_lagrangian_approx_half(i; kwargs...)
 
-  function BudgetedBipartiteMatchingInstance(graph::AbstractGraph{T}, reward::Dict{Edge{T}, Float64}, weight::Dict{Edge{T}, U}, budget::U) where {T, U}
-    matching = BipartiteMatchingInstance(graph, reward)
-    return new{T, U}(matching, weight, budget)
-  end
-end
+approximation_term(::BudgetedBipartiteMatchingInstance{T}, ::LagrangianAlgorithm) where T = NaN
+approximation_ratio(::BudgetedBipartiteMatchingInstance{T}, ::LagrangianAlgorithm) where T = NaN
 
-function _budgeted_bipartite_matching_compute_value(i::BudgetedBipartiteMatchingInstance{T, U}, solution::Vector{Edge{T}}) where {T, U}
-  return _budgeted_bipartite_matching_compute_value(i.matching, solution)
-end
+approximation_term(i::BudgetedBipartiteMatchingInstance{T}, ::LagrangianRefinementAlgorithm) where T = maximum(values(i.matching.rewards))
+approximation_ratio(::BudgetedBipartiteMatchingInstance{T}, ::LagrangianRefinementAlgorithm) where T = NaN
 
-function _budgeted_bipartite_matching_compute_value(i::BipartiteMatchingInstance{T}, solution::Vector{Edge{T}}) where T
-  return sum(i.reward[(e in keys(i.reward)) ? e : reverse(e)] for e in solution)
-end
-
-function _budgeted_bipartite_matching_compute_weight(i::BudgetedBipartiteMatchingInstance{T, U}, solution::Vector{Edge{T}}) where {T, U}
-  return sum(i.weight[(e in keys(i.weight)) ? e : reverse(e)] for e in solution)
-end
-
-abstract type BudgetedBipartiteMatchingSolution{T, U}
-  # instance::BudgetedBipartiteMatchingInstance{T, U}
-  # solution::Vector{Edge{T}}
-  # value::Float64 # TODO: remove me, only useful for Lagrangian.
-end
+approximation_term(::BudgetedBipartiteMatchingInstance{T}, ::IteratedLagrangianRefinementAlgorithm) where T = NaN
+approximation_ratio(::BudgetedBipartiteMatchingInstance{T}, ::IteratedLagrangianRefinementAlgorithm) where T = 0.5
 
 struct BudgetedBipartiteMatchingLagrangianSolution{T, U} <: BudgetedBipartiteMatchingSolution{T, U}
   # Used to store important temporary results from solving the Lagrangian dual.
@@ -385,7 +369,7 @@ function matching_hungarian_budgeted_lagrangian_approx_half(i::BudgetedBipartite
     end
   end
 
-  if best_sol != nothing
+  if best_sol !== nothing
     return best_sol
   else
     return SimpleBudgetedBipartiteMatchingSolution(i)
