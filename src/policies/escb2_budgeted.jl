@@ -1,7 +1,10 @@
 struct ESCB2Budgeted <: ESCB2OptimisationAlgorithm
   ε::Float64 # Discretisation of the coefficients of the nonlinear part.
-  solve_all_budgets_at_once::Bool # Some optimisation algorithms can solve the budgeted problems for all values of the budget at once.
-  # TODO: compute a default value based on what the solver is able to do? Use Julia's applicable to determine it automatically?
+  solve_all_budgets_at_once::Union{Bool, Nothing} # Some optimisation algorithms can solve the budgeted problems for all values of the budget at once.
+end
+
+function ESCB2Budgeted(ε::Float64)
+  return ESCB2Budgeted(ε, nothing)
 end
 
 function optimise_linear_sqrtlinear(instance::CombinatorialInstance{T}, algo::ESCB2Budgeted,
@@ -15,6 +18,13 @@ function optimise_linear_sqrtlinear(instance::CombinatorialInstance{T}, algo::ES
   # only integers.
   linear_discrete = Dict(k => round(Int, v / algo.ε, RoundUp) for (k, v) in linear)
 
+  # Fill automatic values.
+  if algo.solve_all_budgets_at_once === nothing
+    algo = copy(algo) # Don't modify the user's object.
+    algo.solve_all_budgets_at_once = supports_solve_all_budgeted_linear(instance)
+  end
+
+  # Start timing.
   t0 = time_ns()
 
   # Maximum value of the linear term?
@@ -22,11 +32,7 @@ function optimise_linear_sqrtlinear(instance::CombinatorialInstance{T}, algo::ES
 
   # Solve the family of problems with an increasing budget.
   solutions = Dict{Int, Vector{T}}()
-  if ! algo.solve_all_budgets_at_once # TODO: Replace this mandatory parameter by a function defined on the solvers, so that each of them can indicate what they support? Then, if this parameter is not set, the most efficient implementation is called if available; otherwise, follow this parameter (and still warn if the required implementation is not available).
-    if ! applicable(solve_budgeted_linear, instance.solver, sqrtlinear, linear_discrete, max_budget)
-      error("The function solve_budgeted_linear is not defined for the solver $(typeof(instance.solver)) for arguments of type ($(typeof(instance.solver)), $(typeof(sqrtlinear)), $(typeof(linear_discrete)), $(typeof(max_budget))).")
-    end
-
+  if supports_solve_budgeted_linear(instance) && ! algo.solve_all_budgets_at_once
     budget = 0
     while budget <= max_budget
       sol = solve_budgeted_linear(instance.solver, sqrtlinear, linear_discrete, budget)
@@ -46,12 +52,12 @@ function optimise_linear_sqrtlinear(instance::CombinatorialInstance{T}, algo::ES
       end
       budget = sol_budget + 1
     end
-  else
-    if ! applicable(solve_all_budgeted_linear, instance.solver, sqrtlinear, linear_discrete, max_budget)
-      error("The function solve_all_budgeted_linear is not defined for the solver $(typeof(instance.solver)) for arguments of type ($(typeof(instance.solver)), $(typeof(sqrtlinear)), $(typeof(linear_discrete)), $(typeof(max_budget))).")
-    end
-
+  elseif supports_solve_all_budgeted_linear(instance)
     solutions = solve_all_budgeted_linear(instance.solver, sqrtlinear, linear_discrete, max_budget)
+  else
+    error("The function solve_all_budgeted_linear or solve_budgeted_linear is not defined for the solver " *
+          "$(typeof(instance.solver)) for arguments of type ($(typeof(instance.solver)), $(typeof(sqrtlinear)), " *
+          "$(typeof(linear_discrete)), $(typeof(max_budget))). This function is required for this implementation of ESCB2.")
   end
 
   # Take the best solution.
