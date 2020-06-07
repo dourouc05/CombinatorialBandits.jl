@@ -22,6 +22,8 @@ function solve_linear(solver::PerfectBipartiteMatchingAlgosSolver, rewards::Dict
   return [(src(e), dst(e) - solver.n_arms) for e in s]
 end
 
+supports_solve_budgeted_linear(::PerfectBipartiteMatchingAlgosSolver) = true
+
 function solve_budgeted_linear(solver::PerfectBipartiteMatchingAlgosSolver,
                                rewards::Dict{Tuple{Int, Int}, Float64},
                                weights::Dict{Tuple{Int, Int}, Int},
@@ -35,6 +37,8 @@ function solve_budgeted_linear(solver::PerfectBipartiteMatchingAlgosSolver,
 
   return [(src(e), dst(e) - solver.n_arms) for e in s]
 end
+
+supports_solve_all_budgeted_linear(::PerfectBipartiteMatchingAlgosSolver) = true
 
 function solve_all_budgeted_linear(solver::PerfectBipartiteMatchingAlgosSolver,
                                    rewards::Dict{Tuple{Int, Int}, Float64},

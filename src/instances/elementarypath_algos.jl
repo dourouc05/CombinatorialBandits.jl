@@ -26,6 +26,8 @@ function solve_linear(solver::ElementaryPathAlgosSolver, reward::Dict{Tuple{Int,
   return [(src(e), dst(e)) for e in s]
 end
 
+supports_solve_budgeted_linear(::ElementaryPathAlgosSolver) = true
+
 function solve_budgeted_linear(solver::ElementaryPathAlgosSolver,
                                reward::Dict{Tuple{Int, Int}, Float64},
                                weights::Dict{Tuple{Int, Int}, Int},
@@ -36,6 +38,8 @@ function solve_budgeted_linear(solver::ElementaryPathAlgosSolver,
   s = budgeted_lp_dp(i).path
   return [(src(e), dst(e)) for e in s]
 end
+
+supports_solve_all_budgeted_linear(::ElementaryPathAlgosSolver) = true
 
 function solve_all_budgeted_linear(solver::ElementaryPathAlgosSolver,
                                    reward::Dict{Tuple{Int, Int}, Float64},
