@@ -1,7 +1,7 @@
 struct ESCB2Greedy <: ESCB2OptimisationAlgorithm end
 
 function optimise_linear_sqrtlinear(instance::CombinatorialInstance{T}, ::ESCB2Greedy,
-                                    linear::Dict{T, Float64}, sqrtlinear::Dict{T, Float64};
+                                    linear::Dict{T, Float64}, sqrtlinear::Dict{T, Float64}, ::Int;
                                     with_trace::Bool=false) where T
   # TODO: factor this out to the combinatorial algorithm package? This is very generic, in principle (get rid of linear and sqrtlinear parts, replace by a custom evaluation function).
   directions = Set(keys(linear))
