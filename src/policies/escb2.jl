@@ -3,7 +3,7 @@
 
 abstract type ESCB2OptimisationAlgorithm end
 function optimise_linear_sqrtlinear(instance::CombinatorialInstance{T}, ::ESCB2OptimisationAlgorithm,
-                                    linear::Dict{T, Float64}, sqrtlinear::Dict{T, Float64}) where T end
+                                    linear::Dict{T, Float64}, sqrtlinear::Dict{T, Float64}, round::Int) where T end
 
 mutable struct ESCB2 <: Policy
   algo::ESCB2OptimisationAlgorithm
@@ -72,5 +72,5 @@ function choose_action(instance::CombinatorialInstance{T}, policy::ESCB2, state:
   s2 = _escb2_confidence_values(state)
 
   # Solve the maximisation w^T x + \sqrt{s2^T x} with the required algorithm.
-  return optimise_linear_sqrtlinear(instance, policy.algo, w, s2, with_trace=with_trace)
+  return optimise_linear_sqrtlinear(instance, policy.algo, w, s2, state.round, with_trace=with_trace)
 end

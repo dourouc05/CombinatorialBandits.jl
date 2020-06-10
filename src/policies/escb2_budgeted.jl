@@ -1,14 +1,14 @@
 struct ESCB2Budgeted <: ESCB2OptimisationAlgorithm
-  ε::Float64 # Discretisation of the coefficients of the nonlinear part.
-  solve_all_budgets_at_once::Union{Bool, Nothing} # Some optimisation algorithms can solve the budgeted problems for all values of the budget at once.
+  ε::Union{Float64, Nothing} # Discretisation of the coefficients of the nonlinear part, if forced by the user.
+  solve_all_budgets_at_once::Union{Bool, Nothing} # Some optimisation algorithms can solve the budgeted problems for all values of the budget at once more efficiently.
 end
 
-function ESCB2Budgeted(ε::Float64)
-  return ESCB2Budgeted(ε, nothing)
-end
+ESCB2Budgeted() = ESCB2Budgeted(nothing, nothing)
+ESCB2Budgeted(ε::Float64) = ESCB2Budgeted(ε, nothing)
+ESCB2Budgeted(s::Bool) = ESCB2Budgeted(nothing, s)
 
 function optimise_linear_sqrtlinear(instance::CombinatorialInstance{T}, algo::ESCB2Budgeted,
-                                    linear::Dict{T, Float64}, sqrtlinear::Dict{T, Float64};
+                                    linear::Dict{T, Float64}, sqrtlinear::Dict{T, Float64}, bandit_round::Int;
                                     with_trace::Bool=false) where T
   # Transform the linear term in a budget constraint, the nonlinear term
   # becoming the objective function (in which case the concave function
@@ -16,7 +16,14 @@ function optimise_linear_sqrtlinear(instance::CombinatorialInstance{T}, algo::ES
   # For this to work, the linear part of the objective function must
   # take only integer values, i.e. the linear coefficients are actually
   # only integers.
-  linear_discrete = Dict(k => round(Int, v / algo.ε, RoundUp) for (k, v) in linear)
+  ξ = if algo.ε !== nothing
+    algo.ε
+  else
+    logm = max(1.0, log(instance.m))
+    δ = length(linear) * (logm ^ 2) / bandit_round
+    δ / instance.m
+  end
+  linear_discrete = Dict(k => round(Int, v / ξ, RoundUp) for (k, v) in linear)
 
   # Fill automatic values.
   if algo.solve_all_budgets_at_once === nothing
@@ -55,7 +62,8 @@ function optimise_linear_sqrtlinear(instance::CombinatorialInstance{T}, algo::ES
   elseif supports_solve_all_budgeted_linear(instance)
     solutions = solve_all_budgeted_linear(instance.solver, sqrtlinear, linear_discrete, max_budget)
   else
-    error("The function solve_all_budgeted_linear or solve_budgeted_linear is not defined for the solver " *
+    error("At least one of the functions solve_all_budgeted_linear and solve_budgeted_linear " *
+          "is not defined for the solver " *
           "$(typeof(instance.solver)) for arguments of type ($(typeof(instance.solver)), $(typeof(sqrtlinear)), " *
           "$(typeof(linear_discrete)), $(typeof(max_budget))). This function is required for this implementation of ESCB2.")
   end

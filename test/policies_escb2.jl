@@ -129,13 +129,13 @@
     exact_obj = 2.058076533676451
 
     algo = ESCB2Budgeted(.01, true)
-    sol, rd = CombinatorialBandits.optimise_linear_sqrtlinear(i, algo, w, s2, with_trace=true)
+    sol, rd = CombinatorialBandits.optimise_linear_sqrtlinear(i, algo, w, s2, 1000, with_trace=true)
     @test CombinatorialBandits.escb2_index(w, s2, sol) ≈ exact_obj
     @test rd.best_objective ≈ exact_obj
 
     if ! is_travis
       algo = ESCB2Exact()
-      sol, rd = CombinatorialBandits.optimise_linear_sqrtlinear(ilp, algo, w, s2, with_trace=true)
+      sol, rd = CombinatorialBandits.optimise_linear_sqrtlinear(ilp, algo, w, s2, 1000, with_trace=true)
       @test CombinatorialBandits.escb2_index(w, s2, sol) ≈ exact_obj
       @test rd.best_objective ≈ exact_obj
     end
@@ -150,13 +150,13 @@
 
     ε = 0.014581
     algo = ESCB2Budgeted(ε, true)
-    sol, rd = CombinatorialBandits.optimise_linear_sqrtlinear(i, algo, w, s2, with_trace=true)
+    sol, rd = CombinatorialBandits.optimise_linear_sqrtlinear(i, algo, w, s2, 1000, with_trace=true)
     @test CombinatorialBandits.escb2_index(w, s2, sol) ≈ exact_obj atol=ε
     @test rd.best_objective ≈ exact_obj atol=ε
 
     if ! is_travis
       algo = ESCB2Exact()
-      sol, rd = CombinatorialBandits.optimise_linear_sqrtlinear(ilp, algo, w, s2, with_trace=true)
+      sol, rd = CombinatorialBandits.optimise_linear_sqrtlinear(ilp, algo, w, s2, 1000, with_trace=true)
       @test CombinatorialBandits.escb2_index(w, s2, sol) ≈ exact_obj
       @test rd.best_objective ≈ exact_obj
     end

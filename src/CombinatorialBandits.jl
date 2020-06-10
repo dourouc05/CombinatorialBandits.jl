@@ -145,10 +145,10 @@ module CombinatorialBandits
   solve_linear(instance::CombinatorialInstance{T}, rewards::Dict{T, Float64}) where T = solve_linear(instance.solver, rewards)
   solve_budgeted_linear(instance::CombinatorialInstance{T}, rewards::Dict{T, Float64}, weights::Dict{T, Int}, budget::Int) where T =
     solve_budgeted_linear(instance.solver, rewards, weights, budget)
-  supports_solve_budgeted_linear(instance::CombinatorialInstance{T}) = supports_solve_budgeted_linear(instance.solver)
+  supports_solve_budgeted_linear(instance::CombinatorialInstance{T}) where T = supports_solve_budgeted_linear(instance.solver)
   solve_all_budgeted_linear(instance::CombinatorialInstance{T}, rewards::Dict{T, Float64}, weights::Dict{T, Int}, max_budget::Int) where T =
     solve_all_budgeted_linear(instance.solver, rewards, weights, max_budget)
-  supports_solve_all_budgeted_linear(instance::CombinatorialInstance{T}) = supports_solve_budgeted_linear(instance.solver)
+  supports_solve_all_budgeted_linear(instance::CombinatorialInstance{T}) where T = supports_solve_budgeted_linear(instance.solver)
   has_lp_formulation(instance::CombinatorialInstance{T}) where T = has_lp_formulation(instance.solver)
   get_lp_formulation(instance::CombinatorialInstance{T}, rewards::Dict{T, Float64}) where T = has_lp_formulation(instance) ?
     get_lp_formulation(instance.solver, rewards) :
