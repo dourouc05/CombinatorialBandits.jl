@@ -44,8 +44,8 @@ function optimise_linear_sqrtlinear(instance::CombinatorialInstance{T}, algo::ES
     while budget <= max_budget
       sol = solve_budgeted_linear(instance.solver, sqrtlinear, linear_discrete, budget)
 
+      # No solution found: stop increasing the budget.
       if length(sol) == 0 || sol == [-1]
-        # Infeasible!
         for b in budget:max_budget
           solutions[b] = sol
         end
@@ -71,6 +71,7 @@ function optimise_linear_sqrtlinear(instance::CombinatorialInstance{T}, algo::ES
   # Take the best solution.
   best_solution = Int[]
   best_objective = -Inf
+  best_budget = -42
   for (budget, sol) in solutions
     # Ignore infeasible cases.
     if length(sol) == 0 || sol == [-1]
@@ -86,9 +87,12 @@ function optimise_linear_sqrtlinear(instance::CombinatorialInstance{T}, algo::ES
     if reward > best_objective
       best_solution = sol
       best_objective = reward
+      best_budget = budget
     end
   end
   t1 = time_ns()
+
+  println(" => $best_budget (aka $(best_budget * ξ)) over $max_budget")
 
   if with_trace
     run_details = ESCB2Details()
