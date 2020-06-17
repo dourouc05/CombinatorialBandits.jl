@@ -41,6 +41,7 @@ function optimise_linear_sqrtlinear(instance::CombinatorialInstance{T}, algo::ES
   solutions = Dict{Int, Vector{T}}()
   if supports_solve_budgeted_linear(instance) && ! algo.solve_all_budgets_at_once
     budget = 0
+
     while budget <= max_budget
       sol = solve_budgeted_linear(instance.solver, sqrtlinear, linear_discrete, budget)
 
