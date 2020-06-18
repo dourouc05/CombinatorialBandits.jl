@@ -50,4 +50,5 @@ elementary paths.
 
 ## 0.1.4
 
-ESCB2: propose an automatic choice of parameters.
+ESCB2: propose an automatic choice of parameters. Refactor the way the
+discretisation is performed to give more flexibility to the user. 

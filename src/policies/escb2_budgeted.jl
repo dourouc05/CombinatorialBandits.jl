@@ -1,12 +1,41 @@
+# Indicates how coefficients should be discretised for the budgeted implementation.
+abstract type ESCB2BudgetedDiscretisationScheme end
+
+struct ESCB2BudgetedDiscretisationSchemeConstant <: ESCB2BudgetedDiscretisationScheme
+  v::Float64
+end
+
+struct ESCB2BudgetedDiscretisationSchemeLambda <: ESCB2BudgetedDiscretisationScheme
+  f::Function # Argument: the current round t.
+end
+
+function _discretisation_provably_converging(instance::CombinatorialInstance, round::Int)
+  logm = max(1.0, log(instance.m))
+  δ = instance.n_arms * (logm ^ 2) / round
+  return δ / instance.m
+end
+
+ESCB2BudgetedDiscretisationSchemeConservative(instance::CombinatorialInstance, max_rounds::Int) =
+  ESCB2BudgetedDiscretisationSchemeConstant(_discretisation_provably_converging(instance, max_rounds))
+ESCB2BudgetedDiscretisationSchemeAdaptive(instance::CombinatorialInstance) =
+  ESCB2BudgetedDiscretisationSchemeLambda(t -> _discretisation_provably_converging(instance, t))
+
+_get_ξ(s::ESCB2BudgetedDiscretisationScheme, t::Int) = error("Not implemented")
+_get_ξ(s::ESCB2BudgetedDiscretisationSchemeConstant, ::Int) = s.v
+_get_ξ(s::ESCB2BudgetedDiscretisationSchemeLambda, t::Int) = s.f(t)
+
+# Parameters for the budgeted algorithm.
 struct ESCB2Budgeted <: ESCB2OptimisationAlgorithm
-  ε::Union{Float64, Nothing} # Discretisation of the coefficients of the nonlinear part, if forced by the user.
+  discretisation_scheme::ESCB2BudgetedDiscretisationScheme
   solve_all_budgets_at_once::Union{Bool, Nothing} # Some optimisation algorithms can solve the budgeted problems for all values of the budget at once more efficiently.
 end
 
-ESCB2Budgeted() = ESCB2Budgeted(nothing, nothing)
-ESCB2Budgeted(ε::Float64) = ESCB2Budgeted(ε, nothing)
-ESCB2Budgeted(s::Bool) = ESCB2Budgeted(nothing, s)
+ESCB2Budgeted(i::CombinatorialInstance, s::Union{Bool, Nothing}=nothing) =
+  ESCB2Budgeted(ESCB2BudgetedDiscretisationSchemeAdaptive(i), s)
+ESCB2Budgeted(ε::Float64, s::Union{Bool, Nothing}=nothing) =
+  ESCB2Budgeted(ESCB2BudgetedDiscretisationSchemeConstant(ε), s)
 
+# Optimisation of ESCB2's objective function.
 function optimise_linear_sqrtlinear(instance::CombinatorialInstance{T}, algo::ESCB2Budgeted,
                                     linear::Dict{T, Float64}, sqrtlinear::Dict{T, Float64}, bandit_round::Int;
                                     with_trace::Bool=false) where T
@@ -16,13 +45,7 @@ function optimise_linear_sqrtlinear(instance::CombinatorialInstance{T}, algo::ES
   # For this to work, the linear part of the objective function must
   # take only integer values, i.e. the linear coefficients are actually
   # only integers.
-  ξ = if algo.ε !== nothing
-    algo.ε
-  else
-    logm = max(1.0, log(instance.m))
-    δ = length(linear) * (logm ^ 2) / bandit_round
-    δ / instance.m
-  end
+  ξ = _get_ξ(algo.discretisation_scheme, bandit_round)
   linear_discrete = Dict(k => round(Int, v / ξ, RoundUp) for (k, v) in linear)
 
   # Fill automatic values.
@@ -40,25 +63,39 @@ function optimise_linear_sqrtlinear(instance::CombinatorialInstance{T}, algo::ES
   # Solve the family of problems with an increasing budget.
   solutions = Dict{Int, Vector{T}}()
   if supports_solve_budgeted_linear(instance) && ! algo.solve_all_budgets_at_once
-    budget = 0
+    if false
+      # Only works for exact budgeted algorithms!
+      max_i = ceil(log2(max_budget))
+      budgets = Int[2^i for i in 0:max_i]
+      prepend!(budgets, 0)
 
-    while budget <= max_budget
-      sol = solve_budgeted_linear(instance.solver, sqrtlinear, linear_discrete, budget)
+      for budget in budgets
+        sol = solve_budgeted_linear(instance.solver, sqrtlinear, linear_discrete, budget)
 
-      # No solution found: stop increasing the budget.
-      if length(sol) == 0 || sol == [-1]
-        for b in budget:max_budget
+        # No solution found: stop increasing the budget.
+        if length(sol) == 0 || sol == [-1]
+          break
+        end
+
+        solutions[budget] = sol
+      end
+    else
+      budget = 0
+      while budget <= max_budget
+        sol = solve_budgeted_linear(instance.solver, sqrtlinear, linear_discrete, budget)
+
+        # No solution found: stop increasing the budget.
+        if length(sol) == 0 || sol == [-1]
+          break
+        end
+
+        # Feasible.
+        sol_budget = sum(linear_discrete[arm] for arm in keys(linear_discrete) if arm in sol)
+        for b in budget:sol_budget
           solutions[b] = sol
         end
-        break
+        budget = sol_budget + 1
       end
-
-      # Feasible.
-      sol_budget = sum(linear_discrete[arm] for arm in keys(linear_discrete) if arm in sol)
-      for b in budget:sol_budget
-        solutions[b] = sol
-      end
-      budget = sol_budget + 1
     end
   elseif supports_solve_all_budgeted_linear(instance)
     solutions = solve_all_budgeted_linear(instance.solver, sqrtlinear, linear_discrete, max_budget)
@@ -93,7 +130,7 @@ function optimise_linear_sqrtlinear(instance::CombinatorialInstance{T}, algo::ES
   end
   t1 = time_ns()
 
-  println(" => $best_budget (aka $(best_budget * ξ)) over $max_budget")
+  # println(" => $best_budget (aka $(best_budget * ξ)) over $max_budget")
 
   if with_trace
     run_details = ESCB2Details()
