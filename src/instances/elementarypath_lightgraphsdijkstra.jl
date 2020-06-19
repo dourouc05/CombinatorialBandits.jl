@@ -9,6 +9,10 @@ mutable struct ElementaryPathLightGraphsDijkstraSolver <: ElementaryPathSolver
   end
 end
 
+has_lp_formulation(::ElementaryPathLightGraphsDijkstraSolver) = false
+supports_solve_budgeted_linear(::ElementaryPathLightGraphsDijkstraSolver) = false
+supports_solve_all_budgeted_linear(::ElementaryPathLightGraphsDijkstraSolver) = false
+
 function build!(solver::ElementaryPathLightGraphsDijkstraSolver, graph::SimpleDiGraph, source::Int, destination::Int)
   n = nv(graph)
   solver.graph = graph
@@ -16,8 +20,6 @@ function build!(solver::ElementaryPathLightGraphsDijkstraSolver, graph::SimpleDi
   solver.source = source
   solver.destination = destination
 end
-
-has_lp_formulation(::ElementaryPathLightGraphsDijkstraSolver) = false
 
 function solve_linear(solver::ElementaryPathLightGraphsDijkstraSolver, rewards::Dict{Tuple{Int, Int}, Float64})
   # Make up a rewards matrix by copying the input dictionary into the right data structure for the shortest path computations.

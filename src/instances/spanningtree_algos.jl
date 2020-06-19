@@ -6,6 +6,10 @@ mutable struct SpanningTreeAlgosSolver <: SpanningTreeSolver
   end
 end
 
+has_lp_formulation(::SpanningTreeAlgosSolver) = false
+supports_solve_budgeted_linear(::SpanningTreeAlgosSolver) = true
+supports_solve_all_budgeted_linear(::SpanningTreeAlgosSolver) = false
+
 function build!(solver::SpanningTreeAlgosSolver, graph::SimpleGraph)
   solver.graph = graph
 end
@@ -18,8 +22,6 @@ function solve_linear(solver::SpanningTreeAlgosSolver, reward::Dict{Tuple{Int, I
 
   return _mst_solution_normalise(reward, Tuple{Int, Int}[(src(e), dst(e)) for e in s])
 end
-
-has_lp_formulation(::SpanningTreeAlgosSolver) = false
 
 function solve_budgeted_linear(solver::SpanningTreeAlgosSolver, reward::Dict{Tuple{Int, Int}, Float64}, weight::Dict{Tuple{Int, Int}, Int}, budget::Int)
   reward_dict = Dict(Edge(k...) => v for (k, v) in reward)

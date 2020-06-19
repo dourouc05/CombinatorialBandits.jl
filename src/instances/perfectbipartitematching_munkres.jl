@@ -6,6 +6,10 @@ mutable struct PerfectBipartiteMatchingMunkresSolver <: PerfectBipartiteMatching
   end
 end
 
+has_lp_formulation(::PerfectBipartiteMatchingMunkresSolver) = false
+supports_solve_budgeted_linear(::PerfectBipartiteMatchingMunkresSolver) = false
+supports_solve_all_budgeted_linear(::PerfectBipartiteMatchingMunkresSolver) = false
+
 function build!(solver::PerfectBipartiteMatchingMunkresSolver, n_arms::Int)
   solver.weights_matrix = zeros(n_arms, n_arms)
   nothing
@@ -21,5 +25,3 @@ function solve_linear(solver::PerfectBipartiteMatchingMunkresSolver, rewards::Di
   assignment = Munkres.munkres(solver.weights_matrix)
   return collect(enumerate(assignment))
 end
-
-has_lp_formulation(::PerfectBipartiteMatchingMunkresSolver) = false

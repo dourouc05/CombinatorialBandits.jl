@@ -8,16 +8,18 @@ mutable struct ElementaryPathAlgosSolver <: ElementaryPathSolver
   end
 end
 
+has_lp_formulation(::ElementaryPathAlgosSolver) = false
+supports_solve_budgeted_linear(::ElementaryPathAlgosSolver) = true
+supports_solve_all_budgeted_linear(::ElementaryPathAlgosSolver) = true
+
+_tuple_dict_to_edge_dict(d::Dict{Tuple{Int, Int}, T}) where T =
+  Dict(Edge(k...) => v for (k, v) in d)
+
 function build!(solver::ElementaryPathAlgosSolver, graph::SimpleDiGraph, source::Int, destination::Int)
   solver.graph = graph
   solver.source = source
   solver.destination = destination
 end
-
-has_lp_formulation(::ElementaryPathAlgosSolver) = false
-
-_tuple_dict_to_edge_dict(d::Dict{Tuple{Int, Int}, T}) where T =
-  Dict(Edge(k...) => v for (k, v) in d)
 
 function solve_linear(solver::ElementaryPathAlgosSolver, reward::Dict{Tuple{Int, Int}, Float64})
   i = ElementaryPathInstance(solver.graph, _tuple_dict_to_edge_dict(reward),
@@ -25,8 +27,6 @@ function solve_linear(solver::ElementaryPathAlgosSolver, reward::Dict{Tuple{Int,
   s = lp_dp(i).path
   return [(src(e), dst(e)) for e in s]
 end
-
-supports_solve_budgeted_linear(::ElementaryPathAlgosSolver) = true
 
 function solve_budgeted_linear(solver::ElementaryPathAlgosSolver,
                                reward::Dict{Tuple{Int, Int}, Float64},
@@ -38,8 +38,6 @@ function solve_budgeted_linear(solver::ElementaryPathAlgosSolver,
   s = budgeted_lp_dp(i).path
   return [(src(e), dst(e)) for e in s]
 end
-
-supports_solve_all_budgeted_linear(::ElementaryPathAlgosSolver) = true
 
 function solve_all_budgeted_linear(solver::ElementaryPathAlgosSolver,
                                    reward::Dict{Tuple{Int, Int}, Float64},
