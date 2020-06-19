@@ -7,6 +7,10 @@ mutable struct SpanningTreeLightGraphsPrimSolver <: SpanningTreeSolver
   end
 end
 
+has_lp_formulation(::SpanningTreeLightGraphsPrimSolver) = false
+supports_solve_budgeted_linear(::SpanningTreeLightGraphsPrimSolver) = false
+supports_solve_all_budgeted_linear(::SpanningTreeLightGraphsPrimSolver) = false
+
 function build!(solver::SpanningTreeLightGraphsPrimSolver, graph::SimpleGraph)
   n = nv(graph)
   solver.graph = graph
@@ -27,5 +31,3 @@ function solve_linear(solver::SpanningTreeLightGraphsPrimSolver, reward::Dict{Tu
   # Transform edges into tuples.
   return _mst_solution_normalise(reward, [(src(e), dst(e)) for e in mst])
 end
-
-has_lp_formulation(::SpanningTreeLightGraphsPrimSolver) = false

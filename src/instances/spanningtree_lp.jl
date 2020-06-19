@@ -16,6 +16,10 @@ mutable struct SpanningTreeLPSolver <: SpanningTreeSolver
   end
 end
 
+has_lp_formulation(::SpanningTreeLPSolver) = true
+supports_solve_budgeted_linear(::SpanningTreeLPSolver) = false
+supports_solve_all_budgeted_linear(::SpanningTreeLPSolver) = false
+
 function build!(solver::SpanningTreeLPSolver, graph::SimpleGraph)
   # Input graph supposed to be undirected.
   n = nv(graph)
@@ -63,8 +67,6 @@ function build!(solver::SpanningTreeLPSolver, graph::SimpleGraph)
   end
 end
 
-has_lp_formulation(::SpanningTreeLPSolver) = true
-
 function get_lp_formulation(solver::SpanningTreeLPSolver, reward::Dict{Tuple{Int, Int}, Float64})
   obj = sum(reward[i, j] * (solver.x[Edge(i, j)] + solver.x[Edge(j, i)]) for (i, j) in keys(reward))
   vars_forw = Dict{Tuple{Int, Int}, JuMP.VariableRef}((i, j) => solver.x[Edge(i, j)] for (i, j) in keys(reward))
@@ -77,6 +79,12 @@ end
 function solve_linear(solver::SpanningTreeLPSolver, reward::Dict{Tuple{Int, Int}, Float64})
   m, obj, vars = get_lp_formulation(solver, reward)
   @objective(m, Max, obj)
+
+  # Maybe solve_budgeted_linear has already been called on this model.
+  if :SpanningTreeLP in keys(m.ext)
+    budget_constraint = m.ext[:SpanningTreeLP][:budget_constraint]
+    set_normalized_rhs(budget_constraint, 0)
+  end
 
   set_silent(m)
   optimize!(m)

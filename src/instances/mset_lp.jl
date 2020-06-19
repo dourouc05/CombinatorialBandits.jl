@@ -12,6 +12,10 @@ mutable struct MSetLPSolver <: MSetSolver
   end
 end
 
+has_lp_formulation(::MSetLPSolver) = true
+supports_solve_budgeted_linear(::MSetLPSolver) = true
+supports_solve_all_budgeted_linear(::MSetLPSolver) = false
+
 function build!(solver::MSetLPSolver, m::Int, n_arms::Int)
   solver.m = m
   solver.n_arms = n_arms
@@ -24,8 +28,6 @@ function build!(solver::MSetLPSolver, m::Int, n_arms::Int)
 
   @constraint(solver.model, sum(solver.x) <= m)
 end
-
-has_lp_formulation(::MSetLPSolver) = true
 
 function get_lp_formulation(solver::MSetLPSolver, rewards::Dict{T, Float64}) where T
   return solver.model,
