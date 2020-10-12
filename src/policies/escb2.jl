@@ -21,13 +21,9 @@ end
 
 function _escb2_confidence_values(state::State{T}) where T
   t = state.arm_counts
-  w = state.arm_average_reward
   n = state.round
 
-  d = length(t) # n_arms
-  fn = log(n) + 4 * d * log(log(n))
-  fn = max(0, fn) # f is negative for some values of d and small values of n (sometimes as small as 2 or 3).
-
+  fn = max(1, log(n)) # log(n) is negative for low n.
   return Dict(k => (fn / 2) / v for (k, v) in t)
 end
 

@@ -16,13 +16,13 @@ function optimise_linear_sqrtlinear(instance::CombinatorialInstance{T}, ::ESCB2E
   #     (1 + b^T x, 2 * t, 1 - b^T x, 2 * t) in SOCP, following JuMP's conventions
   # Add this reformulation only once in the model to avoid JuMP complaining.
   if :CombinatorialESCB2 in keys(m.ext)
-    confidence_bonus = m.ext[:CombinatorialESCB2][:confidence_bonus]
-    confidence_bonus_linear = m.ext[:CombinatorialESCB2][:confidence_bonus_linear]
-    eq = m.ext[:CombinatorialESCB2][:eq]
-    cone = m.ext[:CombinatorialESCB2][:cone]
+    dict = m.ext[:CombinatorialESCB2]
+    confidence_bonus = dict[:confidence_bonus]
+    confidence_bonus_linear = dict[:confidence_bonus_linear]
+    eq = dict[:eq]
+    cone = dict[:cone]
 
-    for i in keys(sqrtlinear)
-      # TODO: what about coefficients that become zero? May that happen? In that case, they won't necessarily be in sqrtlinear.
+    for i in keys(sqrtlinear) # TODO: what about coefficients that become zero? May that happen? In that case, they won't necessarily be in sqrtlinear, and therefore not updated.
       # Due to normalisation, all variables are considered on the left-hand side,
       # hence the minus sign.
       set_normalized_coefficient(eq, vars[i], - sqrtlinear[i])
