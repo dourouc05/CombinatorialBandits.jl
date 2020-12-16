@@ -16,6 +16,10 @@ mutable struct SpanningTreeLPSolver <: SpanningTreeSolver
   end
 end
 
+has_lp_formulation(::SpanningTreeLPSolver) = true
+supports_solve_budgeted_linear(::SpanningTreeLPSolver) = false
+supports_solve_all_budgeted_linear(::SpanningTreeLPSolver) = false
+
 function build!(solver::SpanningTreeLPSolver, graph::SimpleGraph)
   # Input graph supposed to be undirected.
   n = nv(graph)
@@ -63,8 +67,6 @@ function build!(solver::SpanningTreeLPSolver, graph::SimpleGraph)
   end
 end
 
-has_lp_formulation(::SpanningTreeLPSolver) = true
-
 function get_lp_formulation(solver::SpanningTreeLPSolver, reward::Dict{Tuple{Int, Int}, Float64})
   obj = sum(reward[i, j] * (solver.x[Edge(i, j)] + solver.x[Edge(j, i)]) for (i, j) in keys(reward))
   vars_forw = Dict{Tuple{Int, Int}, JuMP.VariableRef}((i, j) => solver.x[Edge(i, j)] for (i, j) in keys(reward))
@@ -72,43 +74,4 @@ function get_lp_formulation(solver::SpanningTreeLPSolver, reward::Dict{Tuple{Int
   vars = merge(vars_forw, vars_back)
 
   return solver.model, obj, vars
-end
-
-function solve_linear(solver::SpanningTreeLPSolver, reward::Dict{Tuple{Int, Int}, Float64})
-  m, obj, vars = get_lp_formulation(solver, reward)
-  @objective(m, Max, obj)
-
-  set_silent(m)
-  optimize!(m)
-
-  if termination_status(m) != MOI.OPTIMAL
-    return Tuple{Int, Int}[]
-  end
-
-  return Tuple{Int, Int}[(i, j) for (i, j) in keys(reward) if value(vars[i, j]) > 0.5 || value(vars[j, i]) > 0.5]
-end
-
-function solve_budgeted_linear(solver::SpanningTreeLPSolver,
-                               reward::Dict{Tuple{Int, Int}, Float64},
-                               weight::Dict{Tuple{Int, Int}, T},
-                               budget::Int) where {T<:Number} # Handle both Int and Float64
-  m, obj, vars = get_lp_formulation(solver, reward)
-  @objective(m, Max, obj)
-
-  # Add the budget constraint (or change the existing constraint).
-  if :SpanningTreeLP in keys(m.ext)
-    budget_constraint = m.ext[:SpanningTreeLP][:budget_constraint]
-    set_normalized_rhs(budget_constraint, budget)
-  else
-    budget_constraint = @constraint(m, sum(weight[i] * vars[i] for i in keys(reward)) >= budget)
-    m.ext[:SpanningTreeLP] = Dict(:budget_constraint => budget_constraint)
-  end
-
-  set_silent(m)
-  optimize!(m)
-
-  if termination_status(m) != MOI.OPTIMAL
-    return Tuple{Int, Int}[]
-  end
-  return Tuple{Int, Int}[(i, j) for (i, j) in keys(reward) if value(vars[i, j]) > 0.5 || value(vars[j, i]) > 0.5]
 end

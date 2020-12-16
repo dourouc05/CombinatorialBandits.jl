@@ -7,6 +7,10 @@ mutable struct PerfectBipartiteMatchingAlgosSolver <: PerfectBipartiteMatchingSo
   end
 end
 
+has_lp_formulation(::PerfectBipartiteMatchingAlgosSolver) = false
+supports_solve_budgeted_linear(::PerfectBipartiteMatchingAlgosSolver) = true
+supports_solve_all_budgeted_linear(::PerfectBipartiteMatchingAlgosSolver) = true
+
 function build!(solver::PerfectBipartiteMatchingAlgosSolver, n_arms::Int)
   solver.n_arms = n_arms
   nothing
@@ -55,5 +59,3 @@ function solve_all_budgeted_linear(solver::PerfectBipartiteMatchingAlgosSolver,
   end
   return sol
 end
-
-has_lp_formulation(::PerfectBipartiteMatchingAlgosSolver) = false

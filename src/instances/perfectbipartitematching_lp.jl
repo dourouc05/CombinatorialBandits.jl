@@ -12,6 +12,10 @@ mutable struct PerfectBipartiteMatchingLPSolver <: PerfectBipartiteMatchingSolve
   end
 end
 
+has_lp_formulation(::PerfectBipartiteMatchingLPSolver) = true
+supports_solve_budgeted_linear(::PerfectBipartiteMatchingLPSolver) = true
+supports_solve_all_budgeted_linear(::PerfectBipartiteMatchingLPSolver) = false
+
 function build!(solver::PerfectBipartiteMatchingLPSolver, n_arms::Int)
   # Build the optimisation model behind solve_linear.
   solver.model = Model(solver.solver)
@@ -26,23 +30,8 @@ function build!(solver::PerfectBipartiteMatchingLPSolver, n_arms::Int)
   end
 end
 
-has_lp_formulation(::PerfectBipartiteMatchingLPSolver) = true
-
-function get_lp_formulation(solver::PerfectBipartiteMatchingLPSolver, rewards::Dict{Tuple{Int, Int}, Float64})
+function get_lp_formulation(solver::PerfectBipartiteMatchingLPSolver, reward::Dict{Tuple{Int, Int}, Float64})
   return solver.model,
-    sum(rewards[(i, j)] * solver.x[(i, j)] for (i, j) in keys(rewards)),
-    Dict{Tuple{Int, Int}, JuMP.VariableRef}((i, j) => solver.x[(i, j)] for (i, j) in keys(rewards))
-end
-
-function solve_linear(solver::PerfectBipartiteMatchingLPSolver, rewards::Dict{Tuple{Int, Int}, Float64})
-  m, obj, vars = get_lp_formulation(solver, rewards)
-  @objective(m, Max, obj)
-
-  set_silent(m)
-  optimize!(m)
-
-  if termination_status(m) != MOI.OPTIMAL
-    return Tuple{Int, Int}[]
-  end
-  return Tuple{Int, Int}[(i, j) for (i, j) in keys(rewards) if value(vars[(i, j)]) > 0.5]
+    sum(reward[(i, j)] * solver.x[(i, j)] for (i, j) in keys(reward)),
+    Dict{Tuple{Int, Int}, JuMP.VariableRef}((i, j) => solver.x[(i, j)] for (i, j) in keys(reward))
 end

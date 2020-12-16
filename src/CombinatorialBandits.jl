@@ -13,24 +13,6 @@ module CombinatorialBandits
   import Base: push!, copy, hash, isequal
   import JuMP: value
 
-  export Policy, CombinatorialInstance, State,
-         initial_state, initial_trace, simulate, choose_action, pull, update!, solve_linear, solve_budgeted_linear, solve_all_budgeted_linear, get_lp_formulation, has_lp_formulation, is_feasible, is_partially_acceptable,
-         ThompsonSampling, LLR, CUCB, ESCB2, OLSUCB,
-         ThompsonSamplingDetails, LLRDetails, CUCBDetails, ESCB2Details, OLSUCBDetails,
-         ESCB2OptimisationAlgorithm, ESCB2Exact, ESCB2Greedy, ESCB2Budgeted, OLSUCBOptimisationAlgorithm, OLSUCBGreedy,
-         PerfectBipartiteMatching, UncorrelatedPerfectBipartiteMatching, CorrelatedPerfectBipartiteMatching, PerfectBipartiteMatchingSolver, PerfectBipartiteMatchingLPSolver, PerfectBipartiteMatchingMunkresSolver, PerfectBipartiteMatchingHungarianSolver, PerfectBipartiteMatchingAlgosSolver,
-         ElementaryPath, ElementaryPathSolver, ElementaryPathLightGraphsDijkstraSolver, ElementaryPathLPSolver, ElementaryPathAlgosSolver,
-         SpanningTree, SpanningTreeSolver, SpanningTreeLightGraphsPrimSolver, SpanningTreeAlgosSolver, SpanningTreeLPSolver,
-         MSet, MSetSolver, MSetAlgosSolver, MSetLPSolver,
-         # Algos.
-         MSetInstance, MSetSolution, dimension, m, value, values, msets_greedy, msets_dp, msets_lp,
-         BudgetedMSetInstance, BudgetedMSetSolution, weight, weights, budget, max_weight, items, items_all_budgets, budgeted_msets_dp, budgeted_msets_lp, budgeted_msets_lp_select, budgeted_msets_lp_all,
-         ElementaryPathInstance, ElementaryPathSolution, graph, costs, src, dst, cost, lp_dp,
-         BudgetedElementaryPathInstance, BudgetedElementaryPathSolution, rewards, reward, budgeted_lp_dp,
-         SpanningTreeInstance, SpanningTreeSolution, st_prim,
-         BudgetedSpanningTreeInstance, BudgetedSpanningTreeSolution, BudgetedSpanningTreeLagrangianSolution, SimpleBudgetedSpanningTreeSolution, _budgeted_spanning_tree_compute_value, _budgeted_spanning_tree_compute_weight, st_prim_budgeted_lagrangian, st_prim_budgeted_lagrangian_search, _solution_symmetric_difference, _solution_symmetric_difference_size, st_prim_budgeted_lagrangian_refinement, st_prim_budgeted_lagrangian_approx_half,
-         BipartiteMatchingInstance, BipartiteMatchingSolution, matching_hungarian, BudgetedBipartiteMatchingInstance, BudgetedBipartiteMatchingSolution, BudgetedBipartiteMatchingLagrangianSolution, SimpleBudgetedBipartiteMatchingSolution, matching_hungarian_budgeted_lagrangian, matching_hungarian_budgeted_lagrangian_search, matching_hungarian_budgeted_lagrangian_refinement, matching_hungarian_budgeted_lagrangian_approx_half, DynamicBudgetedBipartiteMatchingSolution, matching_dp_imperfect, matching_dp, matching_dp_budgeted
-
   # General algorithm.
   abstract type Policy end
   abstract type PolicyDetails end
@@ -133,8 +115,10 @@ module CombinatorialBandits
   solve_linear(instance::CombinatorialInstance{T}, rewards::Dict{T, Float64}) where T = solve_linear(instance.solver, rewards)
   solve_budgeted_linear(instance::CombinatorialInstance{T}, rewards::Dict{T, Float64}, weights::Dict{T, Int}, budget::Int) where T =
     solve_budgeted_linear(instance.solver, rewards, weights, budget)
+  supports_solve_budgeted_linear(instance::CombinatorialInstance{T}) where T = supports_solve_budgeted_linear(instance.solver)
   solve_all_budgeted_linear(instance::CombinatorialInstance{T}, rewards::Dict{T, Float64}, weights::Dict{T, Int}, max_budget::Int) where T =
     solve_all_budgeted_linear(instance.solver, rewards, weights, max_budget)
+  supports_solve_all_budgeted_linear(instance::CombinatorialInstance{T}) where T = supports_solve_budgeted_linear(instance.solver)
   has_lp_formulation(instance::CombinatorialInstance{T}) where T = has_lp_formulation(instance.solver)
   get_lp_formulation(instance::CombinatorialInstance{T}, rewards::Dict{T, Float64}) where T = has_lp_formulation(instance) ?
     get_lp_formulation(instance.solver, rewards) :
@@ -259,4 +243,19 @@ module CombinatorialBandits
   include("instances/mset.jl")
   include("instances/mset_algos.jl")
   include("instances/mset_lp.jl")
+
+  # Export all symbols. Code copied from JuMP.
+  const _EXCLUDE_SYMBOLS = [Symbol(@__MODULE__), :eval, :include]
+
+  for sym in names(@__MODULE__, all=true)
+    sym_string = string(sym)
+    if sym in _EXCLUDE_SYMBOLS || startswith(sym_string, "_")
+        continue
+    end
+    if !(Base.isidentifier(sym) || (startswith(sym_string, "@") &&
+         Base.isidentifier(sym_string[2:end])))
+       continue
+    end
+    @eval export $sym
+  end
 end

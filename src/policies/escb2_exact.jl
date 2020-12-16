@@ -2,7 +2,7 @@
 struct ESCB2Exact <: ESCB2OptimisationAlgorithm; end
 
 function optimise_linear_sqrtlinear(instance::CombinatorialInstance{T}, ::ESCB2Exact,
-                                    linear::Dict{T, Float64}, sqrtlinear::Dict{T, Float64};
+                                    linear::Dict{T, Float64}, sqrtlinear::Dict{T, Float64}, ::Int;
                                     with_trace::Bool=false) where T
   if ! has_lp_formulation(instance)
     error("The exact formulation for ESCB-2 relies on a LP formulation, which the solver associated to this instance cannot provide.")

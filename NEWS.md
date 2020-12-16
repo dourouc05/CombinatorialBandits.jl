@@ -46,4 +46,9 @@ Quite a bit of bug fixing, especially regarding matching algorithms.
 ## 0.1.3
 
 Update to JuMP 0.21. Fix an infinite loop in LP-based formulation for
-elementary paths. 
+elementary paths.
+
+## 0.1.4
+
+ESCB2: propose an automatic choice of parameters. Refactor the way the
+discretisation is performed to give more flexibility to the user. 

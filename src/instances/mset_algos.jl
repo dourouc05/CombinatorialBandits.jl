@@ -13,14 +13,8 @@ function build!(solver::MSetAlgosSolver, m::Int, n_arms::Int)
 end
 
 has_lp_formulation(::MSetAlgosSolver) = false
-
-function solve_linear(solver::MSetAlgosSolver, weights::Dict{Int, Float64})
-  objects = collect(keys(weights))
-  sort!(objects)
-  weights_vector = [weights[o] for o in objects]
-
-  return msets_greedy(MSetInstance(weights_vector, solver.m)).items
-end
+supports_solve_budgeted_linear(::MSetAlgosSolver) = true
+supports_solve_all_budgeted_linear(::MSetAlgosSolver) = true
 
 function _rewards_weights_dict_to_vectors(rewards::Dict{Int, Float64}, weights::Dict{Int, Int})
   objects = vcat(collect(keys(rewards)), collect(keys(weights)))
@@ -30,6 +24,14 @@ function _rewards_weights_dict_to_vectors(rewards::Dict{Int, Float64}, weights::
   rewards_vector = [rewards[o] for o in objects]
   weights_vector = [weights[o] for o in objects]
   return rewards_vector, weights_vector
+end
+
+function solve_linear(solver::MSetAlgosSolver, weights::Dict{Int, Float64})
+  objects = collect(keys(weights))
+  sort!(objects)
+  weights_vector = [weights[o] for o in objects]
+
+  return msets_greedy(MSetInstance(weights_vector, solver.m)).items
 end
 
 function solve_budgeted_linear(solver::MSetAlgosSolver, rewards::Dict{Int, Float64}, weights::Dict{Int, Int}, budget::Int)

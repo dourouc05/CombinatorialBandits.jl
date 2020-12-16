@@ -6,6 +6,10 @@ mutable struct PerfectBipartiteMatchingHungarianSolver <: PerfectBipartiteMatchi
   end
 end
 
+has_lp_formulation(::PerfectBipartiteMatchingHungarianSolver) = false
+supports_solve_budgeted_linear(::PerfectBipartiteMatchingHungarianSolver) = false
+supports_solve_all_budgeted_linear(::PerfectBipartiteMatchingHungarianSolver) = false
+
 function build!(solver::PerfectBipartiteMatchingHungarianSolver, n_arms::Int)
   solver.weights_matrix = zeros(n_arms, n_arms)
   nothing
@@ -22,5 +26,3 @@ function solve_linear(solver::PerfectBipartiteMatchingHungarianSolver, rewards::
   indices = CartesianIndices(matching)
   return [(indices[v][1], indices[v][2]) for v in findall(matching .== Hungarian.STAR)]
 end
-
-has_lp_formulation(::PerfectBipartiteMatchingHungarianSolver) = false
