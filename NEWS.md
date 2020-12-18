@@ -2,14 +2,16 @@
 
 ## 0.2 series
 
-### 0.2.0
+### 0.2.0 (December 18, 2020)
 
 Addition of a new bandit algorithm: OSSB. It comes with several implementations, 
 depending on how the Graves-Lai problem is solved:
 
-* Naïve exact solution, with the original formulation
-* Exact solution, with an improved formulation and constraint generation
-* Subgradient-based algorithm, with polynomial-time guarantees
+* Naïve exact solution, with the original formulation (`OSSBExactNaive`)
+* Exact solution, with an improved formulation (`OSSBExact`)
+* Exact solution, with an improved formulation and constraint generation (`OSSBExactSmart`), 
+  probably the most efficient technique right now
+* Subgradient-based algorithm, with polynomial-time guarantees (`OSSBSubgradientBudgeted`)
 
 The combinatorial problems have moved to a separate package, 
 [Kombinator.jl](https://github.com/dourouc05/Kombinator.jl). The nonsmooth-
