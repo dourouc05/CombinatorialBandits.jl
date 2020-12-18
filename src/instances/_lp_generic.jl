@@ -1,6 +1,6 @@
 _generic_lp_key(solver) = Symbol(string(typeof(solver)))
 
-function solve_linear(solver, reward::Dict{Tuple{Int, Int}, Float64})
+function solve_linear(solver, reward::Dict{T, Float64}) where T
   # Generic implementation that should work for all solvers following the same conventions:
   #  - `has_lp_formulation` returns `true` for the solver
   #  - `supports_solve_budgeted_linear` returns `true` for the solver
@@ -23,16 +23,15 @@ function solve_linear(solver, reward::Dict{Tuple{Int, Int}, Float64})
   optimize!(m)
 
   if termination_status(m) != MOI.OPTIMAL
-    return Tuple{Int, Int}[]
+    return T[]
   end
-
-  return Tuple{Int, Int}[(i, j) for (i, j) in keys(reward) if value(vars[i, j]) > 0.5 || value(vars[j, i]) > 0.5]
+  return T[arm for arm in keys(reward) if value(arm) > 0.5]
 end
 
 function solve_budgeted_linear(solver,
-                               reward::Dict{Tuple{Int, Int}, Float64},
-                               weight::Dict{Tuple{Int, Int}, T},
-                               budget::Int) where {T<:Number} # Handle both Int and Float64
+                               reward::Dict{T, Float64},
+                               weight::Dict{T, S},
+                               budget::Int) where {T, S<:Number} # Handle both Int and Float64
   # Generic implementation that should work for all solvers following the same conventions:
   #  - `has_lp_formulation` returns `true` for the solver
   #  - `supports_solve_budgeted_linear` returns `true` for the solver
@@ -51,7 +50,7 @@ function solve_budgeted_linear(solver,
     budget_constraint = m.ext[key][:budget_constraint]
     set_normalized_rhs(budget_constraint, budget)
   else
-    budget_constraint = @constraint(m, sum(weight[i] * vars[i] for i in keys(reward)) >= budget)
+    budget_constraint = @constraint(m, sum(weight[arm] * vars[arm] for arm in keys(reward)) >= budget)
     m.ext[key] = Dict(:budget_constraint => budget_constraint)
   end
 
@@ -59,7 +58,7 @@ function solve_budgeted_linear(solver,
   optimize!(m)
 
   if termination_status(m) != MOI.OPTIMAL
-    return Tuple{Int, Int}[]
+    return T[]
   end
-  return Tuple{Int, Int}[(i, j) for (i, j) in keys(reward) if value(vars[i, j]) > 0.5 || value(vars[j, i]) > 0.5]
+  return T[arm for arm in keys(reward) if value(arm) > 0.5]
 end

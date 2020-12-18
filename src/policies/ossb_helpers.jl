@@ -98,9 +98,7 @@ function _ossb_is_solution_feasible(instance::CombinatorialInstance{T}, θ::Dict
 
   # println(m)
   rewards = Dict{T, Float64}(i => 1 / t[arm_to_idx[i]] for i in I_all)
-  weights = Dict{T, Int}(i => round(Int, θ[i] * t[arm_to_idx[i]] / Δmin, RoundUp) for i in I)
-  # @show weights
-  # @show Dict(i => θ[i] * t[arm_to_idx[i]] for i in I)
+  weights = Dict{T, Int}(i => (i in I) ? round(Int, θ[i] * t[arm_to_idx[i]] / Δmin, RoundUp) : 0.0 for i in I_all)
   _, o = _maximise_nonlinear_through_budgeted(instance, rewards, weights, round(Int, Δmax / Δmin), 
                                                            (sol, budget) -> begin 
                                                               # @show sol

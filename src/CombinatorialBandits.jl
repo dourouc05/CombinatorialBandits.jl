@@ -377,6 +377,8 @@ module CombinatorialBandits
   include("policies/olsucb_greedy.jl")
 
   ## Potential problems to solve.
+  include("instances/_lp_generic.jl")
+
   include("instances/perfectbipartitematching.jl")
   include("instances/perfectbipartitematching_algos.jl")
   include("instances/perfectbipartitematching_lp.jl")
