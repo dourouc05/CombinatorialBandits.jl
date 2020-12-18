@@ -11,6 +11,11 @@ end
 
 supports_solve_budgeted_linear(::ElementaryPathLightGraphsDijkstraSolver) = false
 supports_solve_all_budgeted_linear(::ElementaryPathLightGraphsDijkstraSolver) = false
+has_lp_formulation(::ElementaryPathLightGraphsDijkstraSolver) = false
+approximation_ratio(::ElementaryPathLightGraphsDijkstraSolver) = 1.0
+approximation_term(::ElementaryPathLightGraphsDijkstraSolver) = 0.0
+approximation_ratio_budgeted(::ElementaryPathLightGraphsDijkstraSolver) = 1.0
+approximation_term_budgeted(::ElementaryPathLightGraphsDijkstraSolver) = 0.0
 
 function build!(solver::ElementaryPathLightGraphsDijkstraSolver, graph::SimpleDiGraph, source::Int, destination::Int)
   n = nv(graph)
@@ -19,12 +24,6 @@ function build!(solver::ElementaryPathLightGraphsDijkstraSolver, graph::SimpleDi
   solver.source = source
   solver.destination = destination
 end
-
-has_lp_formulation(::ElementaryPathLightGraphsDijkstraSolver) = false
-approximation_ratio(::ElementaryPathLightGraphsDijkstraSolver) = 1.0
-approximation_term(::ElementaryPathLightGraphsDijkstraSolver) = 0.0
-approximation_ratio_budgeted(::ElementaryPathLightGraphsDijkstraSolver) = 1.0
-approximation_term_budgeted(::ElementaryPathLightGraphsDijkstraSolver) = 0.0
 
 function solve_linear(solver::ElementaryPathLightGraphsDijkstraSolver, rewards::Dict{Tuple{Int, Int}, Float64})
   # Make up a rewards matrix by copying the input dictionary into the right data structure for the shortest path computations.

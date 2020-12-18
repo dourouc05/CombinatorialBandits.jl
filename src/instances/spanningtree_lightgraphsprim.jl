@@ -7,6 +7,11 @@ mutable struct SpanningTreeLightGraphsPrimSolver <: SpanningTreeSolver
   end
 end
 
+has_lp_formulation(::SpanningTreeLightGraphsPrimSolver) = false
+approximation_ratio(::SpanningTreeLightGraphsPrimSolver) = 1.0
+approximation_term(::SpanningTreeLightGraphsPrimSolver) = 0.0
+approximation_ratio_budgeted(::SpanningTreeLightGraphsPrimSolver) = 1.0
+approximation_term_budgeted(::SpanningTreeLightGraphsPrimSolver) = 0.0
 supports_solve_budgeted_linear(::SpanningTreeLightGraphsPrimSolver) = false
 supports_solve_all_budgeted_linear(::SpanningTreeLightGraphsPrimSolver) = false
 
@@ -30,9 +35,3 @@ function solve_linear(solver::SpanningTreeLightGraphsPrimSolver, reward::Dict{Tu
   # Transform edges into tuples.
   return _mst_solution_normalise(reward, [(src(e), dst(e)) for e in mst])
 end
-
-has_lp_formulation(::SpanningTreeLightGraphsPrimSolver) = false
-approximation_ratio(::SpanningTreeLightGraphsPrimSolver) = 1.0
-approximation_term(::SpanningTreeLightGraphsPrimSolver) = 0.0
-approximation_ratio_budgeted(::SpanningTreeLightGraphsPrimSolver) = 1.0
-approximation_term_budgeted(::SpanningTreeLightGraphsPrimSolver) = 0.0
