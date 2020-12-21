@@ -44,6 +44,6 @@ end
 
 function get_lp_formulation(solver::PerfectBipartiteMatchingLPSolver, rewards::Dict{Tuple{Int, Int}, Float64})
   return solver.model,
-    sum(reward[(i, j)] * solver.x[(i, j)] for (i, j) in keys(reward)),
+    sum(rewards[(i, j)] * solver.x[(i, j)] for (i, j) in keys(rewards)),
     Dict{Tuple{Int, Int}, JuMP.VariableRef}((i, j) => solver.x[(i, j)] for (i, j) in keys(rewards))
 end
