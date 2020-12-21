@@ -2,6 +2,13 @@
 
 ## 0.2 series
 
+### 0.2.1
+
+Allow changing the confidence radius for CUCB, ESCB, and LLR. Tuning this parameter may
+yield better performance (i.e. lower regret). 
+
+Some bug fixing.
+
 ### 0.2.0 (December 18, 2020)
 
 Addition of a new bandit algorithm: OSSB. It comes with several implementations, 
