@@ -25,7 +25,7 @@ function solve_linear(solver, reward::Dict{T, Float64}) where T
   if termination_status(m) != MOI.OPTIMAL
     return T[]
   end
-  return T[arm for arm in keys(reward) if value(arm) > 0.5]
+  return T[arm for arm in keys(reward) if value(vars[arm]) > 0.5]
 end
 
 function solve_budgeted_linear(solver,
@@ -60,5 +60,5 @@ function solve_budgeted_linear(solver,
   if termination_status(m) != MOI.OPTIMAL
     return T[]
   end
-  return T[arm for arm in keys(reward) if value(arm) > 0.5]
+  return T[arm for arm in keys(reward) if value(vars[arm]) > 0.5]
 end
