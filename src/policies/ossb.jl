@@ -69,6 +69,7 @@ function choose_action(instance::CombinatorialInstance{T}, policy::OSSB, state::
 
   # For initialisation, if some arms have never been tried, force them to be tried.
   # This should not be required for OSSB, but it improves running times for the first few iterations.
+  # TODO: propose a helper method for this part (including solve_linear and trace), it's common to almost all bandit algorithms.
   if any(v == 0 for v in values(state.arm_counts))
     weights = Dict(arm => iszero(state.arm_counts[arm]) ? 1.0 : 0.0 for arm in keys(state.arm_counts))
 

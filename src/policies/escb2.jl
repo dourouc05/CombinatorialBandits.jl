@@ -37,6 +37,7 @@ end
 
 # Theoretical formula: log(n) + 4 m log(log(n)).
 ESCB2(algo::ESCB2OptimisationAlgorithm) = ESCB2(algo, (state::State) -> log(state.round) / 2)
+ESCB2(algo::ESCB2OptimisationAlgorithm, α::Float64) = ESCB2(algo, (state::State) -> α * log(state.round))
 
 mutable struct ESCB2Details <: PolicyDetails
   n_iterations::Int
