@@ -94,6 +94,6 @@ function choose_action(instance::CombinatorialInstance{T}, policy::ESCB2, state:
   w = state.arm_average_reward
   s2, f_n = _escb2_confidence_values(policy, state)
 
-  # Solve the maximisation w^T x + f(n) \sqrt{s2^T x} with the required algorithm.
+  # Solve the maximisation w^T x + \sqrt{f(n) s2^T x} with the required algorithm.
   return optimise_linear_sqrtlinear(instance, policy.algo, w, s2, f_n, state.round, with_trace=with_trace)
 end
