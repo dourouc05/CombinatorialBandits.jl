@@ -200,7 +200,6 @@ function build!(solver::ElementaryPathLPSolver, graph::SimpleDiGraph, source::In
   end
 
   # Set the lazy-constraint callback to ensure the solution is always an elementary path.
-  set_optimizer_attribute(solver.model, "LazyConstraints", 1) # TODO: only works with Gurobi.
   MOI.set(solver.model, MOI.LazyConstraintCallback(), cb_data -> _elementary_path_lazy_callback(solver, cb_data))
 end
 
