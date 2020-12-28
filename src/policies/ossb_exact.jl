@@ -177,8 +177,6 @@ function optimise_graves_lai(instance::CombinatorialInstance{T},
     @show value(inv_t[arm])
   end
 
-  println(m)
-
   # TODO: copied from OSSBExactSmart.
   # Retrieve the solution and normalise with respect to v.
   # value. doesn't broadcast on dictionaries. 

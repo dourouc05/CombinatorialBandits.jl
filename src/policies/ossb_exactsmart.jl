@@ -230,8 +230,6 @@ function optimise_graves_lai(instance::CombinatorialInstance{T},
     return solve_linear(instance, θ) # Perform pure exploitation.
   end
 
-  println(m)
-
   # Return the solution that has been found.
   res = GravesLaiResults(instance, t_val, objective_value(m))
   if with_trace
