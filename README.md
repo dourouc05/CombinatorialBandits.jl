@@ -38,7 +38,7 @@ i = MSet(distr, 8, MSetAlgosSolver())
 If you use this package in your research, please cite either article: 
 
 ```
-@article{10.1145/3447387,
+@article{cuvelier2021aescb,
     author = {Cuvelier, Thibaut and Combes, Richard and Gourdin, Eric},
     title = {Statistically Efficient, Polynomial-Time Algorithms for Combinatorial Semi-Bandits},
     year = {2021},
@@ -56,7 +56,7 @@ If you use this package in your research, please cite either article:
     keywords = {combinatorial bandits, combinatorial optimization, bandits}
 }
 
-@article{cuvelier2021asymptotically,
+@article{cuvelier2021glpg,
   title={Asymptotically Optimal Strategies For Combinatorial Semi-Bandits in Polynomial Time},
   author={Cuvelier, Thibaut and Combes, Richard and Gourdin, Eric},
   journal={arXiv preprint arXiv:2102.07254},
