@@ -2,8 +2,7 @@
 
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
 [![The MIT License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](http://opensource.org/licenses/MIT)
-[![Build Status](https://travis-ci.org/dourouc05/CombinatorialBandits.jl.svg?branch=master)](https://travis-ci.org/dourouc05/CombinatorialBandits.jl)
-![example workflow](https://github.com/dourouc05/CombinatorialBandits.jl/actions/workflows/GitHubCI.yml/badge.svg)
+[![example workflow](https://github.com/dourouc05/CombinatorialBandits.jl/actions/workflows/GitHubCI.yml/badge.svg)](https://github.com/dourouc05/CombinatorialBandits.jl/actions/workflows/GitHubCI.yml/)
 [![Coverage Status](https://coveralls.io/repos/dourouc05/CombinatorialBandits.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/dourouc05/CombinatorialBandits.jl?branch=master)
 [![codecov.io](http://codecov.io/github/dourouc05/CombinatorialBandits.jl/coverage.svg?branch=master)](http://codecov.io/github/dourouc05/CombinatorialBandits.jl?branch=master)
 
