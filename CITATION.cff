@@ -29,5 +29,5 @@ references:
     - family-names: Gourdin
       given-names: Éric
     title: Asymptotically Optimal Strategies For Combinatorial Semi-Bandits in Polynomial Time
-    type: doi
-    value: 10.1145/3447387
+    type: url
+    value: https://proceedings.mlr.press/v132/cuvelier21a.html
