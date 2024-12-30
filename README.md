@@ -56,10 +56,18 @@ If you use this package in your research, please cite either article:
     keywords = {combinatorial bandits, combinatorial optimization, bandits}
 }
 
-@article{cuvelier2021glpg,
-  title={Asymptotically Optimal Strategies For Combinatorial Semi-Bandits in Polynomial Time},
-  author={Cuvelier, Thibaut and Combes, Richard and Gourdin, Eric},
-  journal={arXiv preprint arXiv:2102.07254},
-  year={2021}
+@InProceedings{cuvelier2021glpg,
+    title = 	 {Asymptotically Optimal Strategies For Combinatorial Semi-Bandits in Polynomial Time},
+    author =       {Cuvelier, Thibaut and Combes, Richard and Gourdin, Eric},
+    booktitle = 	 {Proceedings of the 32nd International Conference on Algorithmic Learning Theory},
+    pages = 	 {505--528},
+    year = 	 {2021},
+    editor = 	 {Feldman, Vitaly and Ligett, Katrina and Sabato, Sivan},
+    volume = 	 {132},
+    series = 	 {Proceedings of Machine Learning Research},
+    month = 	 {16--19 Mar},
+    publisher =    {PMLR},
+    pdf = 	 {http://proceedings.mlr.press/v132/cuvelier21a/cuvelier21a.pdf},
+    url = 	 {https://proceedings.mlr.press/v132/cuvelier21a.html},
+    abstract = 	 {We consider combinatorial semi-bandits with uncorrelated Gaussian rewards. In this article, we propose the first method, to the best of our knowledge, that enables to compute the solution of the Graves-Lai optimization problem in polynomial time for many combinatorial structures of interest. In turn, this immediately yields the first known approach to implement asymptotically optimal algorithms in polynomial time for combinatorial semi-bandits. }
 }
-```
