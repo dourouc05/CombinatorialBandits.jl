@@ -2,12 +2,14 @@
 
 ## 0.2 series
 
-### 0.2.1
+### 0.2.1 (December 30, 2024)
 
 Allow changing the confidence radius for CUCB, ESCB, and LLR. Tuning this parameter may
 yield better performance (i.e. lower regret). 
 
 Some bug fixing.
+
+Improve documentation.
 
 ### 0.2.0 (December 18, 2020)
 
