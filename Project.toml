@@ -1,7 +1,7 @@
 name = "CombinatorialBandits"
 uuid = "e17aae4a-d237-47ef-801a-8fb45f2fda95"
 authors = ["Thibaut Cuvelier <dourouc05@gmail.com>"]
-version = "0.2.0"
+version = "0.2.1"
 
 [deps]
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
