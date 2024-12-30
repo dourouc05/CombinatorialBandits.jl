@@ -6,6 +6,8 @@
 [![Coverage Status](https://coveralls.io/repos/dourouc05/CombinatorialBandits.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/dourouc05/CombinatorialBandits.jl?branch=master)
 [![codecov.io](http://codecov.io/github/dourouc05/CombinatorialBandits.jl/coverage.svg?branch=master)](http://codecov.io/github/dourouc05/CombinatorialBandits.jl?branch=master)
 
+[**High-level description of the package**](https://github.com/dourouc05/CombinatorialBandits.jl/blob/master/docs/why.md)
+
 This package implements several algorithms to deal with combinatorial multi-armed bandit (CMAB), including the first polynomial-time optimum-regret algorithms: AESCB ([described in our paper](https://arxiv.org/abs/2002.07258)) and AOSSB ([described in our paper](http://proceedings.mlr.press/v132/cuvelier21a/cuvelier21a.pdf)).
 
 See also [Bandits.jl](https://github.com/rawls238/Bandits.jl), focusing on multi-armed bandits (i.e. not combinatorial).
