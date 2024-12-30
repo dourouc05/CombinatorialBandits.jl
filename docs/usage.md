@@ -43,3 +43,27 @@ The following combinatorial sets are currently supported:
   This set can be used to model selecting pairs (like ads to display on a
   Webpage). This problem is sometimes called "online perfect bipartite
   matching" (although several problems share the same name). 
+
+## Supported policies
+
+The following policies are currently supported:
+
+* Computationally efficient algorithms: they solve only one simple combinatorial
+  problem per round, although they learn more slowly than other algorithms.
+  * Thompson sampling: it amounts to sampling weights according to the current
+    estimates and optimising only with these sampled weights (not taking their
+    uncertainty into account). Corresponding type: `ThompsonSampling`.
+  * LLR. Corresponding type: `LLR`.
+  * CUCB: a variant of the classical UCB algorithm for bandits. Corresponding
+    type: `CUCB`.
+* Statistically efficient algorithms: they learn as quickly as possible, having
+  good estimates of the weights with comparatively fewer rounds, but these have
+  higher computational costs.
+  * ESCB2. Corresponding type: `ESCB2` with the `ESCB2Exact` algorithm.
+  * OSSB. Corresponding type: `OSSB` with the `OSSBExact`, `OSSBExactNaive`, or
+    `OSSBExactSmart` algorithms.
+* Statistically and computationally efficient algorithms: they have almost the
+  same statistical guarantees as statistically efficient algorithms, but
+  improved computational efficiency.
+  * AESCB2. Corresponding type: `ESCB2` with the `ESCB2Budgeted` algorithm.
+  * AOSSB. Corresponding type: `OSSB` with the `OSSBSubgradientBudgeted` algorithm.
