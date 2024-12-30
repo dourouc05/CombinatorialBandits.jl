@@ -33,6 +33,8 @@ i = MSet(distr, 8, MSetAlgosSolver())
 @time simulate(i, ESCB2(ESCB2Budgeted(.1, true)), 200)
 ```
 
+There is more documentation in the [`docs`](https://github.com/dourouc05/CombinatorialBandits.jl/tree/master/docs) folder.
+
 ## Citing
 
 If you use this package in your research, please cite either article: 
